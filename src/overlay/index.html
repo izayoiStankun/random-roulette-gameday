@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>랜덤룰렛게임데이 OBS Overlay</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="overlay">
+    <section id="wheel-scene" class="wheel-scene hidden">
+      <div class="round-label"><span>ROUND</span><strong id="wheel-round">1</strong></div>
+      <div class="wheel-wrap">
+        <canvas id="wheel" width="900" height="900"></canvas>
+        <div class="wheel-cap">R</div>
+        <div class="pointer"></div>
+      </div>
+      <div id="chance-callout" class="chance-callout">방종 확률 5%</div>
+    </section>
+
+    <section id="game-hud" class="game-hud hidden">
+      <div class="game-info">
+        <span id="hud-status">PLAYING · ROUND 1</span>
+        <strong id="hud-game">게임 이름</strong>
+        <small id="hud-chance">NEXT END 5%</small>
+      </div>
+      <div class="countdown">
+        <span>TIME LEFT</span>
+        <strong id="hud-timer">30:00</strong>
+        <div class="progress"><i id="timer-progress"></i></div>
+      </div>
+    </section>
+
+    <section id="donation-pop" class="donation-pop hidden">
+      <span id="donation-donor">닉네임</span>
+      <strong id="donation-amount">1,000원</strong>
+      <p id="donation-text">후원 메시지</p>
+    </section>
+
+    <section id="end-scene" class="end-scene hidden">
+      <p>ROULETTE RESULT</p>
+      <h1>방종</h1>
+      <div>오늘의 랜덤룰렛게임데이 종료</div>
+    </section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

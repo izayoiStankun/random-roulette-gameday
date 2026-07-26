@@ -1,0 +1,48 @@
+{
+  "name": "roulette-broadcast",
+  "version": "0.1.0",
+  "description": "치지직 후원과 OBS를 연동하는 랜덤 룰렛 게임데이 데스크톱 앱",
+  "main": "src/main/index.js",
+  "author": "Remilegi community",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win portable nsis"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "electron": "^37.2.3",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "kr.remilegi.roulettebroadcast",
+    "productName": "랜덤룰렛게임데이",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ]
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-${arch}-portable.${ext}"
+    },
+    "nsis": {
+      "artifactName": "${productName}-${version}-${arch}-setup.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  }
+}

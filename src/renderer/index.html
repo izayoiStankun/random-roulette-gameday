@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>랜덤룰렛게임데이</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">BROADCAST CONTROL</p>
+      <h1>랜덤룰렛게임데이</h1>
+    </div>
+    <div class="connection">
+      <span id="chzzk-dot" class="dot"></span>
+      <span id="chzzk-status">치지직 연결 안 됨</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero panel">
+      <div class="round-card">
+        <span>ROUND</span>
+        <strong id="round">0</strong>
+      </div>
+      <div class="current-card">
+        <span id="status-label">대기 중</span>
+        <strong id="current-game">게임을 등록한 뒤 룰렛을 돌려주세요</strong>
+        <small id="end-chance">4회차부터 방종 5%</small>
+      </div>
+      <div class="timer-card">
+        <span>COUNTDOWN</span>
+        <strong id="timer">30:00</strong>
+      </div>
+      <div class="primary-actions">
+        <button id="spin" class="button accent">룰렛 돌리기</button>
+        <button id="timer-toggle" class="button">게임 시작</button>
+        <button id="finish-game" class="button subtle">조기 종료</button>
+      </div>
+    </section>
+
+    <nav class="tabs" aria-label="설정 화면">
+      <button class="tab active" data-tab="games">게임 목록</button>
+      <button class="tab" data-tab="donations">후원 요청 <span id="queue-count" class="badge">0</span></button>
+      <button class="tab" data-tab="settings">연동·규칙</button>
+      <button class="tab" data-tab="history">진행 기록</button>
+    </nav>
+
+    <section id="tab-games" class="tab-page active">
+      <div class="panel toolbar">
+        <form id="add-game-form">
+          <input id="new-game" placeholder="게임 이름" required>
+          <input id="new-slots" type="number" value="1" min="1" max="10000" aria-label="칸 수">
+          <button class="button" type="submit">직접 추가</button>
+        </form>
+        <div class="toolbar-actions">
+          <button id="steam-scan" class="button">설치된 Steam 게임 불러오기</button>
+          <button id="overlay-open" class="button subtle">OBS 화면 미리보기</button>
+        </div>
+      </div>
+      <div class="panel table-panel">
+        <div class="table-heading">
+          <div>
+            <h2>룰렛 게임</h2>
+            <p id="game-summary">0개 · 총 0칸</p>
+          </div>
+          <input id="game-filter" class="filter" placeholder="게임 검색">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>사용</th><th>게임</th><th>칸 수</th><th>보유 상태</th><th></th></tr></thead>
+            <tbody id="game-list"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-donations" class="tab-page">
+      <div class="panel donation-test">
+        <div>
+          <h2>후원 수신 테스트</h2>
+          <p>실제 결제 없이 명령 인식과 자동/수동 동작을 확인합니다.</p>
+        </div>
+        <form id="simulate-form">
+          <input id="sim-donor" value="테스트시청자" placeholder="닉네임">
+          <input id="sim-amount" type="number" value="1000" min="1" placeholder="금액">
+          <input id="sim-text" value="게임명 추가요" placeholder="후원 메시지">
+          <button class="button" type="submit">가상 후원</button>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="table-heading">
+          <div><h2>승인 대기열</h2><p>자동 모드에서도 미등록 게임은 이곳에서 확인합니다.</p></div>
+        </div>
+        <div id="queue-list" class="queue-list"></div>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="tab-page settings-grid">
+      <div class="panel">
+        <h2>운영 모드</h2>
+        <div class="segmented">
+          <button data-mode="manual" class="mode-button active">수동 모드</button>
+          <button data-mode="auto" class="mode-button">자동 모드</button>
+        </div>
+        <p class="help">수동은 모든 후원 요청을 승인 대기시킵니다. 자동은 이미 확인된 게임의 요청을 즉시 반영하고, 타이머 종료 후 다음 룰렛을 자동 실행합니다.</p>
+        <form id="rules-form" class="form-grid">
+          <label>게임 시간(분)<input id="round-minutes" type="number" min="1" max="1440"></label>
+          <label>방종 시작 확률(%)<input id="end-start" type="number" min="0" max="100"></label>
+          <label>방종 최저 확률(%)<input id="end-min" type="number" min="0" max="100"></label>
+          <label>실패 증감 최솟값<input id="delta-min" type="number" min="-100" max="100"></label>
+          <label>실패 증감 최댓값<input id="delta-max" type="number" min="-100" max="100"></label>
+          <label>추가 명령 접두사<input id="add-prefix"></label>
+          <label>추가 명령 접미사<input id="add-suffix"></label>
+          <label>제거 명령 접두사<input id="remove-prefix"></label>
+          <button class="button accent wide" type="submit">규칙 저장</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h2>치지직 연결</h2>
+        <p class="help">개발자 센터에서 앱을 등록하고 후원 조회 Scope를 허용하세요. 로그인 리디렉션 URL은 아래 값과 정확히 같아야 합니다.</p>
+        <code id="redirect-uri">http://127.0.0.1:17554/oauth/callback</code>
+        <form id="chzzk-form" class="stack-form">
+          <label>Client ID<input id="client-id" autocomplete="off"></label>
+          <label>Client Secret<input id="client-secret" type="password" autocomplete="new-password"></label>
+          <button class="button accent" type="submit">브라우저에서 연결</button>
+          <button id="chzzk-reconnect" class="button subtle" type="button">저장된 인증으로 재연결</button>
+        </form>
+        <hr>
+        <h2>OBS Browser Source</h2>
+        <code id="overlay-uri">http://127.0.0.1:17554/overlay/</code>
+        <p class="help">OBS 소스 → 브라우저에서 위 URL을 넣고 1920×1080으로 설정하세요. localhost 통신이라 외부 인터넷을 사용하지 않습니다.</p>
+        <button id="reset-event" class="button danger">회차·타이머·기록 초기화</button>
+      </div>
+    </section>
+
+    <section id="tab-history" class="tab-page">
+      <div class="panel">
+        <div class="table-heading"><div><h2>룰렛 기록</h2><p>최근 100회까지 기기에 보관합니다.</p></div></div>
+        <div id="history-list" class="history-list"></div>
+      </div>
+    </section>
+  </main>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
