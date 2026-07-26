@@ -1,6 +1,6 @@
 {
   "name": "roulette-broadcast",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "치지직 후원과 OBS를 연동하는 랜덤 룰렛 게임데이 데스크톱 앱",
   "main": "src/main/index.js",
   "author": "Remilegi community",
@@ -9,7 +9,7 @@
     "start": "electron .",
     "test": "node --test",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder --win portable nsis"
+    "dist": "electron-builder --win portable nsis --publish never"
   },
   "dependencies": {
     "ws": "^8.18.3"
