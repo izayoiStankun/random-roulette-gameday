@@ -3,5 +3,6 @@ release/
 dist/
 coverage/
 artifacts/
+docs/build/
 *.log
 .DS_Store

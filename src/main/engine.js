@@ -15,6 +15,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   sunriseLatitude: null,
   sunriseLongitude: null,
   nextRoundPreviewEnabled: true,
+  soundOutput: "app",
+  soundVolume: 70,
   addPrefix: "!게임추가",
   addSuffix: "추가요",
   removePrefix: "!게임빼기"
@@ -54,6 +56,7 @@ class RouletteEngine extends EventEmitter {
       endsAt: null
     };
     this.spin = null;
+    this.cue = null;
     this.lastDonation = null;
   }
 
@@ -73,6 +76,7 @@ class RouletteEngine extends EventEmitter {
       currentGame: this.currentGame,
       timer: this.timer,
       spin: this.spin,
+      cue: this.cue,
       lastDonation: this.lastDonation,
       sunrise: getSunriseStatus(this.settings)
     };
@@ -88,7 +92,7 @@ class RouletteEngine extends EventEmitter {
 
   persistentSnapshot() {
     const snapshot = this.snapshot();
-    return { ...snapshot, spin: null, lastDonation: null };
+    return { ...snapshot, spin: null, cue: null, lastDonation: null };
   }
 
   notify() {
@@ -101,6 +105,10 @@ class RouletteEngine extends EventEmitter {
     next.updateChannel = next.updateChannel === "beta" ? "beta" : "latest";
     next.sunriseEnabled = Boolean(next.sunriseEnabled);
     next.nextRoundPreviewEnabled = next.nextRoundPreviewEnabled !== false;
+    next.soundOutput = ["off", "app", "overlay", "both"].includes(next.soundOutput)
+      ? next.soundOutput
+      : "app";
+    next.soundVolume = clamp(Number(next.soundVolume) || 0, 0, 100);
     const latitude = Number(next.sunriseLatitude);
     const longitude = Number(next.sunriseLongitude);
     const hasLocation = next.sunriseLatitude !== null && next.sunriseLatitude !== "" &&
@@ -472,8 +480,18 @@ class RouletteEngine extends EventEmitter {
     this.notify();
   }
 
+  triggerCue(type) {
+    if (!["countdown", "timer-ended"].includes(type)) {
+      throw new Error("알 수 없는 알림음입니다.");
+    }
+    this.cue = { id: createId("cue"), type, createdAt: Date.now() };
+    this.notify();
+    return this.cue;
+  }
+
   tick(now = Date.now()) {
     if (!this.timer.running || !this.timer.endsAt) return false;
+    const previous = this.timer.remainingSec;
     const remaining = Math.max(0, Math.ceil((this.timer.endsAt - now) / 1000));
     const changed = remaining !== this.timer.remainingSec;
     this.timer.remainingSec = remaining;
@@ -481,6 +499,9 @@ class RouletteEngine extends EventEmitter {
       this.timer.running = false;
       this.timer.endsAt = null;
       this.status = "awaiting_spin";
+      this.cue = { id: createId("cue"), type: "timer-ended", createdAt: now };
+    } else if (previous > 4 && remaining <= 4) {
+      this.cue = { id: createId("cue"), type: "countdown", createdAt: now };
     }
     if (changed) this.notify();
     return remaining === 0;
@@ -492,6 +513,7 @@ class RouletteEngine extends EventEmitter {
     this.status = "idle";
     this.currentGame = null;
     this.spin = null;
+    this.cue = null;
     this.timer = {
       running: false,
       remainingSec: this.settings.roundDurationSec,

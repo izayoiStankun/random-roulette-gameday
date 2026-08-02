@@ -196,6 +196,27 @@
             <button data-preview-mode="on" class="preview-mode-button active">ON</button>
           </div>
         </div>
+        <hr>
+        <div class="option-setting sound-setting">
+          <div>
+            <strong>타이머 알림음</strong>
+            <p class="help">종료 4초 전에 카운트다운, 00:00에 종료 알람을 한 번 재생합니다. 조기 종료에는 울리지 않습니다.</p>
+          </div>
+          <div class="sound-controls">
+            <div class="segmented compact sound-output-segmented">
+              <button data-sound-output="off" class="sound-output-button">OFF</button>
+              <button data-sound-output="app" class="sound-output-button active">운영 앱</button>
+              <button data-sound-output="overlay" class="sound-output-button">OBS</button>
+              <button data-sound-output="both" class="sound-output-button">둘 다</button>
+            </div>
+            <label class="volume-control">볼륨 <output id="sound-volume-value">70%</output><input id="sound-volume" type="range" min="0" max="100" value="70"></label>
+            <div class="sound-test-actions">
+              <button id="test-countdown-sound" class="button subtle" type="button">카운트다운 테스트</button>
+              <button id="test-ended-sound" class="button subtle" type="button">종료 알람 테스트</button>
+            </div>
+          </div>
+        </div>
+        <p class="privacy-note">OBS 출력을 선택하면 브라우저 소스 속성에서 <strong>OBS를 통해 오디오 제어</strong>를 켜세요. <strong>둘 다</strong>는 데스크톱 오디오 캡처 환경에서 소리가 겹칠 수 있습니다.</p>
       </div>
     </section>
 

@@ -93,6 +93,41 @@ test("타이머 만료 시 다음 룰렛 대기 상태가 된다", () => {
   engine.tick(engine.timer.endsAt + 1);
   assert.equal(engine.status, "awaiting_spin");
   assert.equal(engine.timer.remainingSec, 0);
+  assert.equal(engine.cue.type, "timer-ended");
+});
+
+test("타이머는 종료 4초 전에 카운트다운 큐를 한 번 만든다", () => {
+  const engine = new RouletteEngine({ settings: { roundDurationSec: 10 } }, sequence([0.5, 0]));
+  engine.addGame("카운트다운 게임");
+  const spin = engine.beginSpin();
+  engine.finalizeSpin(spin.id);
+  engine.startTimer();
+  engine.tick(engine.timer.endsAt - 4000);
+  const cueId = engine.cue.id;
+  assert.equal(engine.cue.type, "countdown");
+  engine.tick(engine.timer.endsAt - 3000);
+  assert.equal(engine.cue.id, cueId);
+});
+
+test("조기 종료에는 종료 알람 큐를 만들지 않는다", () => {
+  const engine = new RouletteEngine({}, sequence([0.5, 0]));
+  engine.addGame("조기 종료 게임");
+  const spin = engine.beginSpin();
+  engine.finalizeSpin(spin.id);
+  engine.startTimer();
+  engine.finishGameEarly();
+  assert.equal(engine.status, "awaiting_spin");
+  assert.equal(engine.cue, null);
+});
+
+test("알림음 출력과 볼륨 설정을 정규화한다", () => {
+  const engine = new RouletteEngine();
+  engine.updateSettings({ soundOutput: "overlay", soundVolume: 130 });
+  assert.equal(engine.settings.soundOutput, "overlay");
+  assert.equal(engine.settings.soundVolume, 100);
+  engine.updateSettings({ soundOutput: "invalid", soundVolume: -4 });
+  assert.equal(engine.settings.soundOutput, "app");
+  assert.equal(engine.settings.soundVolume, 0);
 });
 
 test("직접 추가의 엔진 기본값은 1칸이다", () => {

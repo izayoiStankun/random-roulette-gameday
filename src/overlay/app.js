@@ -6,10 +6,15 @@ const endScene = document.querySelector("#end-scene");
 const donationPop = document.querySelector("#donation-pop");
 const gameRoster = document.querySelector("#game-roster");
 const sunriseCountdown = document.querySelector("#sunrise-countdown");
+const overlaySounds = {
+  countdown: document.querySelector("#sound-countdown"),
+  "timer-ended": document.querySelector("#sound-timer-ended")
+};
 const palette = ["#0ea5a8", "#1686b9", "#485bb5", "#8b4eb6", "#ca4b87", "#e05c5c", "#d98434", "#a4a83c"];
 let lastSpinId = null;
 let lastDonationAt = null;
 let donationTimer;
+let lastCueId;
 let state;
 
 function formatTime(seconds) {
@@ -23,6 +28,19 @@ function formatClock(seconds) {
   const minutes = Math.floor(value % 3600 / 60);
   const remainingSeconds = value % 60;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+function handleSoundCue(nextState) {
+  const cue = nextState.cue;
+  if (!cue || cue.id === lastCueId) return;
+  lastCueId = cue.id;
+  if (!["overlay", "both"].includes(nextState.settings.soundOutput)) return;
+  const audio = overlaySounds[cue.type];
+  if (!audio) return;
+  audio.pause();
+  audio.currentTime = 0;
+  audio.volume = Math.max(0, Math.min(1, Number(nextState.settings.soundVolume) / 100));
+  audio.play().catch(() => {});
 }
 
 function buildSlices(spin) {
@@ -170,6 +188,7 @@ function renderSunrise(sunrise) {
 
 function render(nextState) {
   state = nextState;
+  handleSoundCue(state);
   const isSpinning = state.status === "spinning" && state.spin;
   wheelScene.classList.toggle("hidden", !isSpinning);
   endScene.classList.toggle("hidden", state.status !== "ended");

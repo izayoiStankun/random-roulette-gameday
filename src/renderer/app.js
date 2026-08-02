@@ -2,9 +2,15 @@ let state;
 let toastTimer;
 let currentTab = "games";
 let updateStatus;
+let lastCueId;
 const selectedGameIds = new Set();
 
 const $ = (selector) => document.querySelector(selector);
+const appSounds = {
+  countdown: new Audio(new URL("../overlay/audio/countdown-4s.mp3", window.location.href)),
+  "timer-ended": new Audio(new URL("../overlay/audio/timer-ended.mp3", window.location.href))
+};
+Object.values(appSounds).forEach((audio) => { audio.preload = "auto"; });
 const escapeHtml = (value) => String(value ?? "")
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;")
@@ -34,6 +40,19 @@ function formatTime(seconds) {
   return `${String(minutes).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
 }
 
+function handleSoundCue(nextState) {
+  const cue = nextState.cue;
+  if (!cue || cue.id === lastCueId) return;
+  lastCueId = cue.id;
+  if (!["app", "both"].includes(nextState.settings.soundOutput)) return;
+  const audio = appSounds[cue.type];
+  if (!audio) return;
+  audio.pause();
+  audio.currentTime = 0;
+  audio.volume = Math.max(0, Math.min(1, Number(nextState.settings.soundVolume) / 100));
+  audio.play().catch(() => showToast("알림음을 재생하지 못했습니다.", true));
+}
+
 const STATUS_LABELS = {
   idle: "대기 중",
   spinning: "룰렛 회전 중",
@@ -46,6 +65,7 @@ const STATUS_LABELS = {
 
 function render(nextState) {
   state = nextState;
+  handleSoundCue(state);
   $("#round").textContent = state.round;
   $("#timer").textContent = formatTime(state.timer.remainingSec);
   $("#status-label").textContent = STATUS_LABELS[state.status] || state.status;
@@ -76,6 +96,11 @@ function render(nextState) {
   document.querySelectorAll(".preview-mode-button").forEach((button) => {
     button.classList.toggle("active", button.dataset.previewMode === (state.settings.nextRoundPreviewEnabled ? "on" : "off"));
   });
+  document.querySelectorAll(".sound-output-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.soundOutput === state.settings.soundOutput);
+  });
+  $("#sound-volume").value = state.settings.soundVolume;
+  $("#sound-volume-value").textContent = `${state.settings.soundVolume}%`;
   renderSunriseStatus();
   $("#queue-count").textContent = state.queue.filter((item) => item.status === "pending").length;
   renderGames();
@@ -313,6 +338,19 @@ function bindEvents() {
       nextRoundPreviewEnabled: button.dataset.previewMode === "on"
     }));
   });
+  document.querySelectorAll(".sound-output-button").forEach((button) => {
+    button.addEventListener("click", () => command("settings:update", {
+      soundOutput: button.dataset.soundOutput
+    }));
+  });
+  $("#sound-volume").addEventListener("input", (event) => {
+    $("#sound-volume-value").textContent = `${event.target.value}%`;
+  });
+  $("#sound-volume").addEventListener("change", (event) => command("settings:update", {
+    soundVolume: Number(event.target.value)
+  }));
+  $("#test-countdown-sound").addEventListener("click", () => command("sound:test", { type: "countdown" }));
+  $("#test-ended-sound").addEventListener("click", () => command("sound:test", { type: "timer-ended" }));
   $("#rules-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await command("settings:update", {

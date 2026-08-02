@@ -12,6 +12,8 @@ const { isValidLocation } = require("./sunrise");
 const { getWindowsLocation } = require("./windows-location");
 const { createGameBackup, parseGameBackup } = require("./game-backup");
 
+app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
+
 let mainWindow;
 let store;
 let engine;
@@ -169,6 +171,9 @@ function installIpcHandlers() {
         return engine.snapshot();
       case "timer:reset":
         engine.resetTimer();
+        return engine.snapshot();
+      case "sound:test":
+        engine.triggerCue(payload.type);
         return engine.snapshot();
       case "game:finish":
         engine.finishGameEarly();

@@ -96,8 +96,8 @@ td.game-name { font-weight: 700; }
 .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; }
 .settings-grid > .panel { padding: 24px; }
 .segmented { display: grid; grid-template-columns: 1fr 1fr; background: #0a1017; padding: 4px; border-radius: 10px; margin-top: 15px; }
-.mode-button, .update-channel-button, .sunrise-mode-button, .preview-mode-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
-.mode-button.active, .update-channel-button.active, .sunrise-mode-button.active, .preview-mode-button.active { background: #1d2b39; color: var(--accent); }
+.mode-button, .update-channel-button, .sunrise-mode-button, .preview-mode-button, .sound-output-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
+.mode-button.active, .update-channel-button.active, .sunrise-mode-button.active, .preview-mode-button.active, .sound-output-button.active { background: #1d2b39; color: var(--accent); }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 21px; }
 label { display: grid; gap: 6px; color: #b5bfca; font-size: 12px; }
 .wide { grid-column: 1 / -1; }
@@ -113,6 +113,15 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 .option-setting { display: grid; grid-template-columns: 1fr 220px; align-items: center; gap: 20px; }
 .option-setting > div > strong { font-size: 14px; }
 .segmented.compact { margin: 0; }
+.sound-controls { display: grid; gap: 11px; }
+.sound-setting { grid-template-columns: 1fr 300px; }
+.sound-output-segmented { grid-template-columns: repeat(4, 1fr); }
+.sound-output-button { padding: 9px 7px; font-size: 12px; }
+.volume-control { grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; }
+.volume-control output { justify-self: end; color: var(--accent); font: 700 12px ui-monospace, monospace; }
+.volume-control input { grid-column: 1 / -1; width: 100%; padding: 0; accent-color: var(--accent); }
+.sound-test-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.sound-test-actions .button { padding-inline: 8px; font-size: 11px; white-space: nowrap; }
 .privacy-note { margin: 14px 0 0; padding: 11px 13px; border-radius: 8px; background: #12222a; color: #9bc5d4; font-size: 12px; line-height: 1.6; }
 .probability-cell { width: 130px; display: grid; grid-template-columns: 48px 1fr; gap: 8px; align-items: center; color: #b9ddea; font: 700 11px ui-monospace, monospace; }
 .probability-cell > i { display: block; height: 5px; border-radius: 5px; background: #263543; overflow: hidden; }
@@ -137,5 +146,6 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
   .settings-grid { grid-template-columns: 1fr; }
   .donation-test { grid-template-columns: 1fr; }
   .option-setting { grid-template-columns: 1fr; }
+  .sound-setting { grid-template-columns: 1fr; }
   .list-footer { align-items: stretch; flex-direction: column; }
 }

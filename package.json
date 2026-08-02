@@ -1,6 +1,6 @@
 {
   "name": "roulette-broadcast",
-  "version": "0.2.0-beta.3",
+  "version": "0.2.0",
   "description": "치지직 후원과 OBS를 연동하는 랜덤 룰렛 게임데이 데스크톱 앱",
   "main": "src/main/index.js",
   "author": "Remilegi community",
@@ -27,7 +27,8 @@
     "asar": true,
     "files": [
       "src/**/*",
-      "package.json"
+      "package.json",
+      "THIRD_PARTY_NOTICES.md"
     ],
     "directories": {
       "output": "release"
