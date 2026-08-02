@@ -1,5 +1,5 @@
 const path = require("node:path");
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
 const { RouletteEngine } = require("./engine");
 const { JsonStore } = require("./store");
@@ -7,6 +7,8 @@ const { OverlayServer } = require("./overlay-server");
 const { ChzzkClient } = require("./chzzk-client");
 const { scanSteamLibraries } = require("./steam-library");
 const { UpdateService } = require("./update-service");
+const { isValidLocation } = require("./sunrise");
+const { getWindowsLocation } = require("./windows-location");
 
 let mainWindow;
 let store;
@@ -18,6 +20,8 @@ let spinTimer;
 let autoSpinTimer;
 let updateService;
 let updateCheckTimer;
+let tickInterval;
+let sunriseInterval;
 
 function sendState(state = engine.snapshot()) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("state", state);
@@ -42,6 +46,7 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: "#0c1017",
     title: "랜덤룰렛게임데이",
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, "..", "preload.js"),
       contextIsolation: true,
@@ -49,6 +54,8 @@ function createWindow() {
       sandbox: false
     }
   });
+  Menu.setApplicationMenu(null);
+  mainWindow.setMenuBarVisibility(false);
   mainWindow.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
 }
 
@@ -82,6 +89,21 @@ function installIpcHandlers() {
   ipcMain.handle("command", async (_event, { name, payload }) => {
     switch (name) {
       case "settings:update":
+        if (Object.hasOwn(payload, "sunriseEnabled")) {
+          const secrets = store.readSecrets();
+          if (payload.sunriseEnabled) {
+            const latitude = Number(payload.sunriseLatitude);
+            const longitude = Number(payload.sunriseLongitude);
+            if (!isValidLocation(latitude, longitude)) throw new Error("현재 위치를 확인하지 못했습니다.");
+            store.writeSecrets({
+              ...secrets,
+              sunriseLocation: { latitude, longitude }
+            });
+          } else {
+            delete secrets.sunriseLocation;
+            store.writeSecrets(secrets);
+          }
+        }
         engine.updateSettings(payload);
         if (payload.updateChannel) updateService.setChannel(engine.settings.updateChannel);
         return engine.snapshot();
@@ -136,11 +158,19 @@ function installIpcHandlers() {
   ipcMain.handle("update:download", () => updateService.download());
   ipcMain.handle("update:install", () => updateService.install());
   ipcMain.handle("update:open", () => updateService.openRelease());
+  ipcMain.handle("location:current", () => getWindowsLocation());
 }
 
 app.whenReady().then(async () => {
   store = new JsonStore(app.getPath("userData"));
   const savedState = store.readState();
+  const savedSecrets = store.readSecrets();
+  if (savedState.settings?.sunriseEnabled && savedSecrets.sunriseLocation) {
+    savedState.settings.sunriseLatitude = savedSecrets.sunriseLocation.latitude;
+    savedState.settings.sunriseLongitude = savedSecrets.sunriseLocation.longitude;
+  } else if (savedState.settings?.sunriseEnabled) {
+    savedState.settings.sunriseEnabled = false;
+  }
   if (!savedState.settings?.updateChannel && app.getVersion().includes("-")) {
     savedState.settings = { ...(savedState.settings || {}), updateChannel: "beta" };
   }
@@ -199,7 +229,10 @@ app.whenReady().then(async () => {
   installIpcHandlers();
   createWindow();
   updateCheckTimer = setTimeout(() => updateService.check(), 12000);
-  setInterval(() => engine.tick(), 250);
+  tickInterval = setInterval(() => engine.tick(), 250);
+  sunriseInterval = setInterval(() => {
+    if (engine.settings.sunriseEnabled) sendState();
+  }, 1000);
 });
 
 app.on("window-all-closed", () => {
@@ -211,6 +244,8 @@ app.on("before-quit", () => {
   clearTimeout(spinTimer);
   clearTimeout(autoSpinTimer);
   clearTimeout(updateCheckTimer);
+  clearInterval(tickInterval);
+  clearInterval(sunriseInterval);
   if (store && engine) store.writeState(engine.persistentSnapshot());
   if (chzzk) chzzk.disconnect();
   if (overlayServer) overlayServer.close();

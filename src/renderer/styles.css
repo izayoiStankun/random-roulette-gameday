@@ -96,8 +96,8 @@ td.game-name { font-weight: 700; }
 .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; }
 .settings-grid > .panel { padding: 24px; }
 .segmented { display: grid; grid-template-columns: 1fr 1fr; background: #0a1017; padding: 4px; border-radius: 10px; margin-top: 15px; }
-.mode-button, .update-channel-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
-.mode-button.active, .update-channel-button.active { background: #1d2b39; color: var(--accent); }
+.mode-button, .update-channel-button, .sunrise-mode-button, .preview-mode-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
+.mode-button.active, .update-channel-button.active, .sunrise-mode-button.active, .preview-mode-button.active { background: #1d2b39; color: var(--accent); }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 21px; }
 label { display: grid; gap: 6px; color: #b5bfca; font-size: 12px; }
 .wide { grid-column: 1 / -1; }
@@ -109,6 +109,14 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 .update-status-box { display: grid; gap: 10px; margin: 16px 0; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: #0b1119; font-size: 13px; }
 .update-status-box progress { width: 100%; accent-color: var(--accent); }
 .update-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.broadcast-options { grid-column: 1 / -1; }
+.option-setting { display: grid; grid-template-columns: 1fr 220px; align-items: center; gap: 20px; }
+.option-setting > div > strong { font-size: 14px; }
+.segmented.compact { margin: 0; }
+.privacy-note { margin: 14px 0 0; padding: 11px 13px; border-radius: 8px; background: #12222a; color: #9bc5d4; font-size: 12px; line-height: 1.6; }
+.probability-cell { width: 130px; display: grid; grid-template-columns: 48px 1fr; gap: 8px; align-items: center; color: #b9ddea; font: 700 11px ui-monospace, monospace; }
+.probability-cell > i { display: block; height: 5px; border-radius: 5px; background: #263543; overflow: hidden; }
+.probability-cell > i::after { content: ""; display: block; width: var(--probability); height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
 .history-item { display: grid; grid-template-columns: 80px 1fr 180px; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); padding: 12px; font-size: 13px; }
 .history-item strong.end { color: var(--danger); }
 
@@ -121,4 +129,5 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
   .primary-actions { grid-column: 1 / -1; flex-direction: row !important; border-top: 1px solid var(--line); }
   .settings-grid { grid-template-columns: 1fr; }
   .donation-test { grid-template-columns: 1fr; }
+  .option-setting { grid-template-columns: 1fr; }
 }

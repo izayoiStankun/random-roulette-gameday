@@ -4,6 +4,8 @@ const wheelScene = document.querySelector("#wheel-scene");
 const gameHud = document.querySelector("#game-hud");
 const endScene = document.querySelector("#end-scene");
 const donationPop = document.querySelector("#donation-pop");
+const gameRoster = document.querySelector("#game-roster");
+const sunriseCountdown = document.querySelector("#sunrise-countdown");
 const palette = ["#0ea5a8", "#1686b9", "#485bb5", "#8b4eb6", "#ca4b87", "#e05c5c", "#d98434", "#a4a83c"];
 let lastSpinId = null;
 let lastDonationAt = null;
@@ -13,6 +15,14 @@ let state;
 function formatTime(seconds) {
   const value = Math.max(0, Number(seconds) || 0);
   return `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+}
+
+function formatClock(seconds) {
+  const value = Math.max(0, Number(seconds) || 0);
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor(value % 3600 / 60);
+  const remainingSeconds = value % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
 function buildSlices(spin) {
@@ -101,13 +111,63 @@ function showDonation(donation) {
   donationTimer = setTimeout(() => donationPop.classList.add("hidden"), 5500);
 }
 
+function renderRoster(games, preview) {
+  const totalSlots = games.reduce((sum, game) => sum + game.slots, 0);
+  document.querySelector("#roster-kicker").textContent = preview ? "NEXT ROUND PREVIEW" : "ROULETTE POOL";
+  document.querySelector("#roster-title").textContent = preview ? "다음 라운드 미리보기" : "룰렛 목록";
+  document.querySelector("#roster-summary").textContent = `${games.length}개 · 총 ${totalSlots}칸`;
+  const list = document.querySelector("#roster-list");
+  list.replaceChildren();
+  games.slice(0, 12).forEach((game, index) => {
+    const probability = totalSlots > 0 ? game.slots / totalSlots * 100 : 0;
+    const row = document.createElement("div");
+    row.className = "roster-item";
+    const rank = document.createElement("span");
+    rank.textContent = String(index + 1).padStart(2, "0");
+    const name = document.createElement("strong");
+    name.textContent = game.name;
+    const slots = document.createElement("small");
+    slots.textContent = `${game.slots}칸`;
+    const chance = document.createElement("em");
+    chance.textContent = `${probability < 1 && probability > 0 ? probability.toFixed(2) : probability.toFixed(1)}%`;
+    row.append(rank, name, slots, chance);
+    list.append(row);
+  });
+  if (games.length > 12) {
+    const more = document.createElement("div");
+    more.className = "roster-more";
+    more.textContent = `외 ${games.length - 12}개 게임`;
+    list.append(more);
+  }
+}
+
+function renderSunrise(sunrise) {
+  const visible = Boolean(sunrise?.enabled && sunrise.configured && sunrise.visible && sunrise.sunriseAt);
+  sunriseCountdown.classList.toggle("hidden", !visible);
+  if (!visible) return;
+  document.querySelector("#sunrise-timer").textContent = formatClock(sunrise.remainingSec);
+  const sunriseTime = new Date(sunrise.sunriseAt);
+  document.querySelector("#sunrise-time").textContent = `일출 ${sunriseTime.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 function render(nextState) {
   state = nextState;
   const isSpinning = state.status === "spinning" && state.spin;
   wheelScene.classList.toggle("hidden", !isSpinning);
   endScene.classList.toggle("hidden", state.status !== "ended");
-  const showHud = Boolean(state.currentGame) && !isSpinning && state.status !== "ended";
+  const showHud = Boolean(state.currentGame) && !isSpinning && ["ready", "playing", "paused"].includes(state.status);
   gameHud.classList.toggle("hidden", !showHud);
+  const games = state.games.filter((game) => game.enabled && game.slots > 0);
+  const isWaiting = ["idle", "awaiting_spin"].includes(state.status);
+  const isPreview = state.settings.nextRoundPreviewEnabled && (
+    state.status === "ready" ||
+    (state.status === "playing" && state.timer.running && state.timer.remainingSec > 0 && state.timer.remainingSec <= 120)
+  );
+  const showRoster = games.length > 0 && !isSpinning && state.status !== "ended" && (isWaiting || isPreview);
+  gameRoster.classList.toggle("hidden", !showRoster);
+  gameRoster.classList.toggle("preview", isPreview);
+  if (showRoster) renderRoster(games, isPreview);
+  renderSunrise(state.sunrise);
 
   if (isSpinning) {
     document.querySelector("#wheel-round").textContent = state.spin.round;

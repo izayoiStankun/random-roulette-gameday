@@ -1,6 +1,6 @@
 {
   "name": "roulette-broadcast",
-  "version": "0.2.0-beta.1",
+  "version": "0.2.0-beta.2",
   "description": "치지직 후원과 OBS를 연동하는 랜덤 룰렛 게임데이 데스크톱 앱",
   "main": "src/main/index.js",
   "author": "Remilegi community",
@@ -14,6 +14,7 @@
   "dependencies": {
     "electron-updater": "^6.8.9",
     "semver": "^7.8.5",
+    "suncalc": "^2.0.1",
     "ws": "^8.18.3"
   },
   "devDependencies": {

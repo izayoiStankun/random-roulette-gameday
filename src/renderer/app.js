@@ -53,7 +53,7 @@ function render(nextState) {
     state.status === "spinning" ? "선택 중…" :
     state.currentGame?.name || "게임을 등록한 뒤 룰렛을 돌려주세요";
   $("#end-chance").textContent = state.round < 4
-    ? `4회차부터 방종 ${state.settings.endChanceStart}%`
+    ? `4회차부터 방종 확률 ${state.settings.endChanceStart}%`
     : `다음 방종 확률 ${state.endChance}%`;
 
   $("#spin").disabled = ["spinning", "playing", "ended"].includes(state.status);
@@ -68,6 +68,13 @@ function render(nextState) {
   document.querySelectorAll(".update-channel-button").forEach((button) => {
     button.classList.toggle("active", button.dataset.updateChannel === state.settings.updateChannel);
   });
+  document.querySelectorAll(".sunrise-mode-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.sunriseMode === (state.settings.sunriseEnabled ? "on" : "off"));
+  });
+  document.querySelectorAll(".preview-mode-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.previewMode === (state.settings.nextRoundPreviewEnabled ? "on" : "off"));
+  });
+  renderSunriseStatus();
   $("#queue-count").textContent = state.queue.filter((item) => item.status === "pending").length;
   renderGames();
   renderQueue();
@@ -80,14 +87,36 @@ function renderGames() {
   const games = state.games.filter((game) => game.name.toLocaleLowerCase("ko").includes(filter));
   const totalSlots = state.games.filter((game) => game.enabled).reduce((sum, game) => sum + game.slots, 0);
   $("#game-summary").textContent = `${state.games.length}개 · 활성 ${totalSlots}칸`;
-  $("#game-list").innerHTML = games.length ? games.map((game) => `
+  $("#game-list").innerHTML = games.length ? games.map((game) => {
+    const probability = game.enabled && totalSlots > 0 ? game.slots / totalSlots * 100 : 0;
+    const probabilityLabel = `${probability < 1 && probability > 0 ? probability.toFixed(2) : probability.toFixed(1)}%`;
+    return `
     <tr data-game-id="${escapeHtml(game.id)}">
       <td><input class="game-enabled" type="checkbox" ${game.enabled ? "checked" : ""}></td>
       <td class="game-name">${escapeHtml(game.name)}</td>
       <td><input class="slot-input" type="number" min="1" max="10000" value="${game.slots}"></td>
+      <td><div class="probability-cell"><span>${probabilityLabel}</span><i style="--probability:${probability}%"></i></div></td>
       <td><span class="status-pill">${game.installed ? "설치됨" : game.owned ? "보유" : "미확인"}</span></td>
       <td><button class="icon-button game-delete" title="삭제">삭제</button></td>
-    </tr>`).join("") : `<tr><td colspan="5"><div class="empty">등록된 게임이 없습니다.</div></td></tr>`;
+    </tr>`;
+  }).join("") : `<tr><td colspan="6"><div class="empty">등록된 게임이 없습니다.</div></td></tr>`;
+}
+
+function renderSunriseStatus() {
+  if (!state.settings.sunriseEnabled) {
+    $("#sunrise-status").textContent = "OFF · 위치를 사용하지 않습니다.";
+    return;
+  }
+  if (!state.sunrise?.configured) {
+    $("#sunrise-status").textContent = "위치 또는 일출 시각을 확인할 수 없습니다.";
+    return;
+  }
+  if (!state.sunrise.sunriseAt) {
+    $("#sunrise-status").textContent = "현재 위치에서 가까운 일출 시각을 계산할 수 없습니다.";
+    return;
+  }
+  const sunrise = new Date(state.sunrise.sunriseAt);
+  $("#sunrise-status").textContent = `다음 일출 ${sunrise.toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })} · 1시간 전부터 OBS 표시`;
 }
 
 function renderQueue() {
@@ -205,6 +234,16 @@ function bindEvents() {
       showToast(button.dataset.updateChannel === "beta" ? "테스트판 업데이트도 확인합니다." : "정식판 업데이트만 확인합니다.");
     });
   });
+  document.querySelector('[data-sunrise-mode="off"]').addEventListener("click", async () => {
+    await command("settings:update", { sunriseEnabled: false });
+    showToast("썬라이즈 카운트다운을 끄고 저장된 위치를 삭제했습니다.");
+  });
+  document.querySelector('[data-sunrise-mode="on"]').addEventListener("click", enableSunriseCountdown);
+  document.querySelectorAll(".preview-mode-button").forEach((button) => {
+    button.addEventListener("click", () => command("settings:update", {
+      nextRoundPreviewEnabled: button.dataset.previewMode === "on"
+    }));
+  });
   $("#rules-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await command("settings:update", {
@@ -238,6 +277,20 @@ function bindEvents() {
   $("#update-download").addEventListener("click", () => runUpdateAction(() => window.roulette.downloadUpdate()));
   $("#update-install").addEventListener("click", () => runUpdateAction(() => window.roulette.installUpdate()));
   $("#update-open").addEventListener("click", () => runUpdateAction(() => window.roulette.openUpdatePage()));
+}
+
+async function enableSunriseCountdown() {
+  if (state.settings.sunriseEnabled) return;
+  const approved = confirm("현재 지역을 기준으로 일출 시간을 설정합니다. 위치는 약 1km 단위로 반올림되어 이 PC의 Windows 보안 저장소에만 보관됩니다. 그래도 적용하시겠어요?");
+  if (!approved) return;
+  showToast("Windows에서 현재 위치를 확인하고 있습니다…");
+  try {
+    const { latitude, longitude } = await window.roulette.getCurrentLocation();
+    await command("settings:update", { sunriseEnabled: true, sunriseLatitude: latitude, sunriseLongitude: longitude });
+    showToast("현재 지역 기준의 일출 카운트다운을 켰습니다.");
+  } catch (error) {
+    showToast(error.message || "위치 확인에 실패했습니다.", true);
+  }
 }
 
 async function runUpdateAction(action) {

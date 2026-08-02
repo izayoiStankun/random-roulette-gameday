@@ -1,5 +1,6 @@
 const { EventEmitter } = require("node:events");
 const { randomBytes, randomInt } = require("node:crypto");
+const { getSunriseStatus, isValidLocation } = require("./sunrise");
 
 const DEFAULT_SETTINGS = Object.freeze({
   mode: "manual",
@@ -10,6 +11,10 @@ const DEFAULT_SETTINGS = Object.freeze({
   endDeltaMax: 10,
   overlayPort: 17554,
   updateChannel: "latest",
+  sunriseEnabled: false,
+  sunriseLatitude: null,
+  sunriseLongitude: null,
+  nextRoundPreviewEnabled: true,
   addPrefix: "!게임추가",
   addSuffix: "추가요",
   removePrefix: "!게임빼기"
@@ -53,8 +58,11 @@ class RouletteEngine extends EventEmitter {
   }
 
   snapshot() {
+    const settings = { ...this.settings };
+    delete settings.sunriseLatitude;
+    delete settings.sunriseLongitude;
     return {
-      settings: this.settings,
+      settings,
       games: this.games,
       queue: this.queue,
       history: this.history,
@@ -64,7 +72,8 @@ class RouletteEngine extends EventEmitter {
       currentGame: this.currentGame,
       timer: this.timer,
       spin: this.spin,
-      lastDonation: this.lastDonation
+      lastDonation: this.lastDonation,
+      sunrise: getSunriseStatus(this.settings)
     };
   }
 
@@ -81,6 +90,20 @@ class RouletteEngine extends EventEmitter {
     const next = { ...this.settings, ...patch };
     next.mode = next.mode === "auto" ? "auto" : "manual";
     next.updateChannel = next.updateChannel === "beta" ? "beta" : "latest";
+    next.sunriseEnabled = Boolean(next.sunriseEnabled);
+    next.nextRoundPreviewEnabled = next.nextRoundPreviewEnabled !== false;
+    const latitude = Number(next.sunriseLatitude);
+    const longitude = Number(next.sunriseLongitude);
+    const hasLocation = next.sunriseLatitude !== null && next.sunriseLatitude !== "" &&
+      next.sunriseLongitude !== null && next.sunriseLongitude !== "";
+    if (next.sunriseEnabled && hasLocation && isValidLocation(latitude, longitude)) {
+      next.sunriseLatitude = latitude;
+      next.sunriseLongitude = longitude;
+    } else {
+      next.sunriseEnabled = false;
+      next.sunriseLatitude = null;
+      next.sunriseLongitude = null;
+    }
     next.roundDurationSec = clamp(Number(next.roundDurationSec) || 1800, 10, 86400);
     next.endChanceStart = clamp(Number(next.endChanceStart) || 5, 0, 100);
     next.endChanceMin = clamp(Number(next.endChanceMin) || 3, 0, 100);

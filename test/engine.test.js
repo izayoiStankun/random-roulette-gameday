@@ -94,3 +94,22 @@ test("타이머 만료 시 다음 룰렛 대기 상태가 된다", () => {
   assert.equal(engine.status, "awaiting_spin");
   assert.equal(engine.timer.remainingSec, 0);
 });
+
+test("직접 추가의 엔진 기본값은 1칸이다", () => {
+  const engine = new RouletteEngine();
+  engine.addGame("기본 게임");
+  assert.equal(engine.findGame("기본 게임").slots, 1);
+});
+
+test("일출 위치 좌표는 UI와 OBS 상태에 노출하지 않는다", () => {
+  const engine = new RouletteEngine();
+  engine.updateSettings({
+    sunriseEnabled: true,
+    sunriseLatitude: 37.57,
+    sunriseLongitude: 126.98
+  });
+  assert.equal(engine.settings.sunriseLatitude, 37.57);
+  assert.equal(Object.hasOwn(engine.snapshot().settings, "sunriseLatitude"), false);
+  assert.equal(Object.hasOwn(engine.persistentSnapshot().settings, "sunriseLongitude"), false);
+  assert.equal(engine.snapshot().sunrise.configured, true);
+});

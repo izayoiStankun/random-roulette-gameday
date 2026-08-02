@@ -52,6 +52,34 @@ html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background:
 .progress { height: 5px; background: #31414c; overflow: hidden; }
 .progress i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--blue), var(--mint)); transition: width .2s linear; }
 
+.game-roster {
+  position: absolute; left: 54px; top: 42px; width: 560px; max-height: 850px; padding: 22px 24px;
+  background: linear-gradient(145deg, #071018f4, #0c1a24e8); border: 1px solid #294352;
+  border-top: 5px solid var(--mint); box-shadow: 0 22px 70px #0009; transition: opacity .35s, transform .35s;
+}
+.game-roster.preview { width: 500px; }
+.game-roster.hidden { transform: translateY(-16px); }
+.roster-heading { display: grid; grid-template-columns: 1fr auto; align-items: end; padding-bottom: 15px; border-bottom: 1px solid #294352; }
+.roster-heading span { grid-column: 1 / -1; color: var(--mint); font: 800 12px ui-monospace, monospace; letter-spacing: .18em; }
+.roster-heading strong { margin-top: 5px; font-size: 26px; }
+.roster-heading small { color: #9cb4c1; }
+.roster-list { display: grid; gap: 5px; padding-top: 10px; }
+.roster-item { display: grid; grid-template-columns: 34px 1fr 55px 64px; gap: 10px; align-items: center; padding: 8px 9px; background: #ffffff08; }
+.roster-item > span { color: #668291; font: 700 11px ui-monospace, monospace; }
+.roster-item > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.roster-item > small { color: #a9bdc7; text-align: right; }
+.roster-item > em { color: var(--mint); text-align: right; font: 800 12px ui-monospace, monospace; font-style: normal; }
+.roster-more { padding: 9px; text-align: center; color: #8ba2ae; font-size: 12px; }
+
+.sunrise-countdown {
+  position: absolute; top: 42px; left: 50%; z-index: 20; transform: translateX(-50%);
+  min-width: 330px; padding: 14px 22px; text-align: center; background: linear-gradient(135deg, #161326f2, #372719e8);
+  border: 1px solid #ffc46f80; border-top: 4px solid #ffbe63; box-shadow: 0 15px 55px #0009; transition: opacity .35s;
+}
+.sunrise-countdown > span { color: #ffc46f; font: 800 12px ui-monospace, monospace; letter-spacing: .2em; }
+.sunrise-countdown > strong { display: block; margin: 3px 0; font: 900 38px ui-monospace, monospace; letter-spacing: -.04em; }
+.sunrise-countdown > small { color: #e7cfaf; }
+
 .donation-pop {
   position: absolute; right: 50px; bottom: 54px; width: 440px; padding: 19px 22px;
   background: #071018f2; border: 1px solid #294352; border-right: 6px solid var(--mint);
