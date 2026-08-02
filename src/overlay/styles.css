@@ -69,6 +69,8 @@ html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background:
 .roster-item > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .roster-item > small { color: #a9bdc7; text-align: right; }
 .roster-item > em { color: var(--mint); text-align: right; font: 800 12px ui-monospace, monospace; font-style: normal; }
+.roster-item.roster-end { background: #4c1522bb; border-left: 3px solid #ff6174; }
+.roster-item.roster-end > span, .roster-item.roster-end > strong, .roster-item.roster-end > em { color: #ff8997; }
 .roster-more { padding: 9px; text-align: center; color: #8ba2ae; font-size: 12px; }
 
 .sunrise-countdown {

@@ -111,15 +111,33 @@ function showDonation(donation) {
   donationTimer = setTimeout(() => donationPop.classList.add("hidden"), 5500);
 }
 
-function renderRoster(games, preview) {
+function renderRoster(games, preview, probabilityState) {
   const totalSlots = games.reduce((sum, game) => sum + game.slots, 0);
+  const endChance = Number(probabilityState?.endChance) || 0;
+  const gamesChance = 100 - endChance;
   document.querySelector("#roster-kicker").textContent = preview ? "NEXT ROUND PREVIEW" : "ROULETTE POOL";
   document.querySelector("#roster-title").textContent = preview ? "다음 라운드 미리보기" : "룰렛 목록";
-  document.querySelector("#roster-summary").textContent = `${games.length}개 · 총 ${totalSlots}칸`;
+  document.querySelector("#roster-summary").textContent = endChance > 0
+    ? `게임 ${gamesChance}% · 방종 ${endChance}%`
+    : `${games.length}개 · 총 ${totalSlots}칸 · 게임 100%`;
   const list = document.querySelector("#roster-list");
   list.replaceChildren();
+  if (endChance > 0) {
+    const endRow = document.createElement("div");
+    endRow.className = "roster-item roster-end";
+    const rank = document.createElement("span");
+    rank.textContent = "END";
+    const name = document.createElement("strong");
+    name.textContent = "방종";
+    const slots = document.createElement("small");
+    slots.textContent = `${probabilityState.round}회차`;
+    const chance = document.createElement("em");
+    chance.textContent = `${endChance.toFixed(1)}%`;
+    endRow.append(rank, name, slots, chance);
+    list.append(endRow);
+  }
   games.slice(0, 12).forEach((game, index) => {
-    const probability = totalSlots > 0 ? game.slots / totalSlots * 100 : 0;
+    const probability = totalSlots > 0 ? game.slots / totalSlots * gamesChance : 0;
     const row = document.createElement("div");
     row.className = "roster-item";
     const rank = document.createElement("span");
@@ -166,7 +184,7 @@ function render(nextState) {
   const showRoster = games.length > 0 && !isSpinning && state.status !== "ended" && (isWaiting || isPreview);
   gameRoster.classList.toggle("hidden", !showRoster);
   gameRoster.classList.toggle("preview", isPreview);
-  if (showRoster) renderRoster(games, isPreview);
+  if (showRoster) renderRoster(games, isPreview, state.probability);
   renderSunrise(state.sunrise);
 
   if (isSpinning) {

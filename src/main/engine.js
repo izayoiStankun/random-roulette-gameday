@@ -68,6 +68,7 @@ class RouletteEngine extends EventEmitter {
       history: this.history,
       round: this.round,
       endChance: this.endChance,
+      probability: this.probabilitySnapshot(),
       status: this.status,
       currentGame: this.currentGame,
       timer: this.timer,
@@ -75,6 +76,14 @@ class RouletteEngine extends EventEmitter {
       lastDonation: this.lastDonation,
       sunrise: getSunriseStatus(this.settings)
     };
+  }
+
+  probabilitySnapshot() {
+    const round = this.status === "spinning" && this.spin ? this.round : this.round + 1;
+    const endChance = this.status === "spinning" && this.spin
+      ? this.spin.chanceUsed
+      : round >= 4 ? clamp(this.endChance || this.settings.endChanceStart, 0, 100) : 0;
+    return { round, endChance, gamesChance: 100 - endChance };
   }
 
   persistentSnapshot() {
@@ -193,6 +202,38 @@ class RouletteEngine extends EventEmitter {
     this.games = this.games.filter((item) => item.id !== id);
     if (this.games.length === before) throw new Error("게임을 찾을 수 없습니다.");
     this.notify();
+  }
+
+  removeGames(ids) {
+    const targets = new Set(Array.isArray(ids) ? ids : []);
+    const before = this.games.length;
+    this.games = this.games.filter((item) => !targets.has(item.id));
+    const removed = before - this.games.length;
+    if (removed > 0) this.notify();
+    return removed;
+  }
+
+  clearGames() {
+    const removed = this.games.length;
+    this.games = [];
+    if (removed > 0) this.notify();
+    return removed;
+  }
+
+  replaceGames(items) {
+    this.games = items.map((item) => ({
+      id: createId("game"),
+      name: normalizeName(item.name),
+      slots: clamp(Number(item.slots) || 1, 1, 10000),
+      enabled: item.enabled !== false,
+      installed: Boolean(item.installed),
+      owned: Boolean(item.owned || item.installed),
+      appId: item.appId || null,
+      source: item.source || "backup"
+    })).filter((item) => item.name);
+    this.games.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    this.notify();
+    return this.games.length;
   }
 
   findGame(name) {

@@ -2,6 +2,7 @@ let state;
 let toastTimer;
 let currentTab = "games";
 let updateStatus;
+const selectedGameIds = new Set();
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value ?? "")
@@ -52,9 +53,10 @@ function render(nextState) {
     state.status === "ended" ? "방종" :
     state.status === "spinning" ? "선택 중…" :
     state.currentGame?.name || "게임을 등록한 뒤 룰렛을 돌려주세요";
-  $("#end-chance").textContent = state.round < 4
-    ? `4회차부터 방종 확률 ${state.settings.endChanceStart}%`
-    : `다음 방종 확률 ${state.endChance}%`;
+  const probability = state.probability || { round: state.round + 1, endChance: 0, gamesChance: 100 };
+  $("#end-chance").textContent = probability.endChance > 0
+    ? `${probability.round}회차 확률 · 방종 ${probability.endChance}% + 게임 전체 ${probability.gamesChance}%`
+    : `1~3회차 게임 100% · 4회차부터 방종 ${state.settings.endChanceStart}% 반영`;
 
   $("#spin").disabled = ["spinning", "playing", "ended"].includes(state.status);
   $("#timer-toggle").disabled = !state.currentGame || ["spinning", "awaiting_spin", "ended"].includes(state.status);
@@ -83,15 +85,30 @@ function render(nextState) {
 }
 
 function renderGames() {
+  const currentIds = new Set(state.games.map((game) => game.id));
+  for (const id of selectedGameIds) {
+    if (!currentIds.has(id)) selectedGameIds.delete(id);
+  }
   const filter = $("#game-filter").value.trim().toLocaleLowerCase("ko");
   const games = state.games.filter((game) => game.name.toLocaleLowerCase("ko").includes(filter));
   const totalSlots = state.games.filter((game) => game.enabled).reduce((sum, game) => sum + game.slots, 0);
-  $("#game-summary").textContent = `${state.games.length}개 · 활성 ${totalSlots}칸`;
-  $("#game-list").innerHTML = games.length ? games.map((game) => {
-    const probability = game.enabled && totalSlots > 0 ? game.slots / totalSlots * 100 : 0;
+  const endChance = totalSlots > 0 ? Number(state.probability?.endChance) || 0 : 0;
+  const gamesChance = 100 - endChance;
+  $("#game-summary").textContent = `${state.games.length}개 · 활성 ${totalSlots}칸 · 게임 ${gamesChance.toFixed(1)}% · 방종 ${endChance.toFixed(1)}%`;
+  const endRow = endChance > 0 ? `
+    <tr class="end-probability-row">
+      <td></td><td>—</td>
+      <td class="game-name">방종<small>${state.probability.round}회차 전체 확률에 반영</small></td>
+      <td>—</td>
+      <td><div class="probability-cell"><span>${endChance.toFixed(1)}%</span><i style="--probability:${endChance}%"></i></div></td>
+      <td><span class="status-pill">특수 결과</span></td><td></td>
+    </tr>` : "";
+  const gameRows = games.map((game) => {
+    const probability = game.enabled && totalSlots > 0 ? game.slots / totalSlots * gamesChance : 0;
     const probabilityLabel = `${probability < 1 && probability > 0 ? probability.toFixed(2) : probability.toFixed(1)}%`;
     return `
     <tr data-game-id="${escapeHtml(game.id)}">
+      <td><input class="game-select" type="checkbox" ${selectedGameIds.has(game.id) ? "checked" : ""} aria-label="${escapeHtml(game.name)} 선택"></td>
       <td><input class="game-enabled" type="checkbox" ${game.enabled ? "checked" : ""}></td>
       <td class="game-name">${escapeHtml(game.name)}</td>
       <td><input class="slot-input" type="number" min="1" max="10000" value="${game.slots}"></td>
@@ -99,7 +116,21 @@ function renderGames() {
       <td><span class="status-pill">${game.installed ? "설치됨" : game.owned ? "보유" : "미확인"}</span></td>
       <td><button class="icon-button game-delete" title="삭제">삭제</button></td>
     </tr>`;
-  }).join("") : `<tr><td colspan="6"><div class="empty">등록된 게임이 없습니다.</div></td></tr>`;
+  }).join("");
+  $("#game-list").innerHTML = games.length || endRow
+    ? `${endRow}${gameRows}`
+    : `<tr><td colspan="7"><div class="empty">등록된 게임이 없습니다.</div></td></tr>`;
+  updateBulkControls();
+}
+
+function updateBulkControls() {
+  const allSelected = state.games.length > 0 && state.games.every((game) => selectedGameIds.has(game.id));
+  $("#select-all-games").textContent = allSelected ? "전체 선택 해제" : "전체 선택";
+  $("#select-all-games").disabled = state.games.length === 0;
+  $("#delete-selected-games").disabled = selectedGameIds.size === 0;
+  $("#clear-games").disabled = state.games.length === 0;
+  $("#backup-games").disabled = state.games.length === 0;
+  $("#selected-game-count").textContent = `${selectedGameIds.size}개 선택`;
 }
 
 function renderSunriseStatus() {
@@ -178,6 +209,12 @@ function bindEvents() {
   $("#game-list").addEventListener("change", async (event) => {
     const row = event.target.closest("tr[data-game-id]");
     if (!row) return;
+    if (event.target.classList.contains("game-select")) {
+      if (event.target.checked) selectedGameIds.add(row.dataset.gameId);
+      else selectedGameIds.delete(row.dataset.gameId);
+      updateBulkControls();
+      return;
+    }
     if (event.target.classList.contains("game-enabled")) {
       await command("game:update", { id: row.dataset.gameId, patch: { enabled: event.target.checked } });
     }
@@ -188,7 +225,39 @@ function bindEvents() {
   $("#game-list").addEventListener("click", async (event) => {
     const row = event.target.closest("tr[data-game-id]");
     if (row && event.target.classList.contains("game-delete")) {
+      selectedGameIds.delete(row.dataset.gameId);
       await command("game:remove", { id: row.dataset.gameId });
+    }
+  });
+  $("#select-all-games").addEventListener("click", () => {
+    const allSelected = state.games.length > 0 && state.games.every((game) => selectedGameIds.has(game.id));
+    selectedGameIds.clear();
+    if (!allSelected) state.games.forEach((game) => selectedGameIds.add(game.id));
+    renderGames();
+  });
+  $("#delete-selected-games").addEventListener("click", async () => {
+    const ids = [...selectedGameIds];
+    if (!ids.length || !confirm(`선택한 게임 ${ids.length}개를 목록에서 삭제할까요?`)) return;
+    const result = await command("game:remove-many", { ids });
+    selectedGameIds.clear();
+    showToast(`${result.removed}개 게임을 삭제했습니다.`);
+  });
+  $("#clear-games").addEventListener("click", async () => {
+    if (!confirm(`게임 ${state.games.length}개를 전부 삭제할까요? 필요하면 먼저 리스트를 백업해 주세요.`)) return;
+    const result = await command("game:clear");
+    selectedGameIds.clear();
+    showToast(`게임 목록 ${result.removed}개를 초기화했습니다.`);
+  });
+  $("#backup-games").addEventListener("click", async () => {
+    const result = await command("game:backup");
+    if (!result.canceled) showToast(`${result.count}개 게임 목록을 ${result.filePath.split(/[\\/]/).pop()}에 백업했습니다.`);
+  });
+  $("#restore-games").addEventListener("click", async () => {
+    if (!confirm("백업을 불러오면 현재 게임 목록을 교체합니다. 계속할까요?")) return;
+    const result = await command("game:restore");
+    if (!result.canceled) {
+      selectedGameIds.clear();
+      showToast(`${result.imported}개 게임을 백업에서 불러왔습니다.`);
     }
   });
   $("#steam-scan").addEventListener("click", async () => {

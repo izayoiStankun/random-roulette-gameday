@@ -1,5 +1,6 @@
 const path = require("node:path");
-const { app, BrowserWindow, ipcMain, Menu, shell } = require("electron");
+const fs = require("node:fs/promises");
+const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
 const { RouletteEngine } = require("./engine");
 const { JsonStore } = require("./store");
@@ -9,6 +10,7 @@ const { scanSteamLibraries } = require("./steam-library");
 const { UpdateService } = require("./update-service");
 const { isValidLocation } = require("./sunrise");
 const { getWindowsLocation } = require("./windows-location");
+const { createGameBackup, parseGameBackup } = require("./game-backup");
 
 let mainWindow;
 let store;
@@ -116,6 +118,36 @@ function installIpcHandlers() {
       case "game:remove":
         engine.removeGame(payload.id);
         return engine.snapshot();
+      case "game:remove-many": {
+        const removed = engine.removeGames(payload.ids);
+        return { removed };
+      }
+      case "game:clear": {
+        const removed = engine.clearGames();
+        return { removed };
+      }
+      case "game:backup": {
+        const result = await dialog.showSaveDialog(mainWindow, {
+          title: "룰렛 게임 목록 백업",
+          defaultPath: `roulette-games-${new Date().toISOString().slice(0, 10)}.json`,
+          filters: [{ name: "JSON 백업", extensions: ["json"] }]
+        });
+        if (result.canceled || !result.filePath) return { canceled: true };
+        const backup = createGameBackup(engine.games);
+        await fs.writeFile(result.filePath, JSON.stringify(backup, null, 2), "utf8");
+        return { canceled: false, count: backup.games.length, filePath: result.filePath };
+      }
+      case "game:restore": {
+        const result = await dialog.showOpenDialog(mainWindow, {
+          title: "룰렛 게임 목록 백업 불러오기",
+          properties: ["openFile"],
+          filters: [{ name: "JSON 백업", extensions: ["json"] }]
+        });
+        if (result.canceled || !result.filePaths[0]) return { canceled: true };
+        const games = parseGameBackup(await fs.readFile(result.filePaths[0], "utf8"));
+        const imported = engine.replaceGames(games);
+        return { canceled: false, imported, filePath: result.filePaths[0] };
+      }
       case "steam:scan": {
         const games = scanSteamLibraries();
         const result = engine.mergeGames(games);

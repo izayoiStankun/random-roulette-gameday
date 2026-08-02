@@ -113,3 +113,26 @@ test("일출 위치 좌표는 UI와 OBS 상태에 노출하지 않는다", () =>
   assert.equal(Object.hasOwn(engine.persistentSnapshot().settings, "sunriseLongitude"), false);
   assert.equal(engine.snapshot().sunrise.configured, true);
 });
+
+test("다음 룰렛 확률은 4회차부터 방종을 포함해 합계 100%가 된다", () => {
+  const early = new RouletteEngine({ round: 2 });
+  assert.deepEqual(early.snapshot().probability, { round: 3, endChance: 0, gamesChance: 100 });
+
+  const fourth = new RouletteEngine({ round: 3, settings: { endChanceStart: 5 } });
+  assert.deepEqual(fourth.snapshot().probability, { round: 4, endChance: 5, gamesChance: 95 });
+
+  const later = new RouletteEngine({ round: 4, endChance: 9 });
+  assert.deepEqual(later.snapshot().probability, { round: 5, endChance: 9, gamesChance: 91 });
+});
+
+test("선택 삭제·전체 초기화·백업 복원용 목록 교체가 동작한다", () => {
+  const engine = new RouletteEngine();
+  const first = engine.addGame("첫 게임");
+  engine.addGame("둘째 게임");
+  assert.equal(engine.removeGames([first.id]), 1);
+  assert.equal(engine.games.length, 1);
+  assert.equal(engine.clearGames(), 1);
+  assert.equal(engine.games.length, 0);
+  assert.equal(engine.replaceGames([{ name: "복원 게임", slots: 7, enabled: true }]), 1);
+  assert.equal(engine.findGame("복원 게임").slots, 7);
+});

@@ -62,16 +62,28 @@
       <div class="panel table-panel">
         <div class="table-heading">
           <div>
-          <h2>룰렛 목록</h2>
+            <h2>룰렛 목록</h2>
             <p id="game-summary">0개 · 총 0칸</p>
           </div>
           <input id="game-filter" class="filter" placeholder="게임 검색">
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>사용</th><th>게임</th><th>칸 수</th><th>확률</th><th>보유 상태</th><th></th></tr></thead>
+            <thead><tr><th>선택</th><th>사용</th><th>게임</th><th>칸 수</th><th>전체 확률</th><th>보유 상태</th><th></th></tr></thead>
             <tbody id="game-list"></tbody>
           </table>
+        </div>
+        <div class="list-footer">
+          <div class="list-footer-group">
+            <button id="select-all-games" class="button subtle">전체 선택</button>
+            <button id="delete-selected-games" class="button danger" disabled>선택한 목록 삭제</button>
+            <span id="selected-game-count">0개 선택</span>
+          </div>
+          <div class="list-footer-group">
+            <button id="backup-games" class="button subtle">리스트 백업</button>
+            <button id="restore-games" class="button subtle">백업 불러오기</button>
+            <button id="clear-games" class="button danger">전체 리스트 초기화</button>
+          </div>
         </div>
       </div>
     </section>
