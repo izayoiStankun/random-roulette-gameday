@@ -53,6 +53,19 @@ test("수동 모드는 후원 게임 추가를 승인 대기시킨다", () => {
   assert.equal(engine.findGame("새 게임").slots, 2);
 });
 
+test("명령 없는 일반 후원 메시지를 게임 이름으로 추가 요청한다", () => {
+  const engine = new RouletteEngine();
+  const result = engine.ingestDonation({
+    donatorNickname: "시청자",
+    payAmount: "5000",
+    donationText: "HANS"
+  });
+  assert.equal(result.action, "queued");
+  assert.equal(result.request.kind, "add");
+  assert.equal(result.request.gameName, "HANS");
+  assert.equal(result.request.slots, 5);
+});
+
 test("자동 모드는 확인된 게임 요청만 즉시 반영한다", () => {
   const engine = new RouletteEngine({ settings: { mode: "auto" } });
   engine.addGame("보유 게임", { owned: true });

@@ -182,19 +182,30 @@ function renderSunriseStatus() {
 }
 
 function renderQueue() {
-  const items = state.queue;
-  $("#queue-list").innerHTML = items.length ? items.map((item) => `
+  const pendingItems = state.queue.filter((item) => item.status === "pending");
+  const resolvedItems = state.queue.filter((item) => item.status !== "pending");
+  const renderItem = (item, interactive) => `
     <div class="queue-item ${item.status !== "pending" ? "resolved" : ""}" data-request-id="${escapeHtml(item.id)}">
       <div>
         <strong>${item.kind === "add" ? "추가" : "제거"} ${item.slots}칸 · ${escapeHtml(item.donor)}</strong>
-        <div class="queue-meta">${Number(item.amount).toLocaleString()}원 · “${escapeHtml(item.donationText)}” · ${item.status}</div>
+        <div class="queue-meta">${Number(item.amount).toLocaleString()}원 · “${escapeHtml(item.donationText)}” · ${item.status === "applied" ? "승인됨" : item.status === "rejected" ? "거절됨" : "대기 중"}</div>
       </div>
-      ${item.status === "pending" ? `<div class="queue-actions">
+      ${interactive ? `<div class="queue-actions">
         <input class="request-game-name" value="${escapeHtml(item.gameName)}" aria-label="게임 이름">
         <button class="button request-approve">승인</button>
         <button class="button subtle request-reject">거절</button>
       </div>` : ""}
-    </div>`).join("") : `<div class="empty">후원 요청이 없습니다.</div>`;
+    </div>`;
+  $("#pending-queue-summary").textContent = pendingItems.length
+    ? `${pendingItems.length}개 요청을 확인해 주세요. 미등록·별칭 게임은 이름을 수정한 뒤 승인할 수 있습니다.`
+    : "현재 확인할 요청이 없습니다.";
+  $("#queue-list").innerHTML = pendingItems.length
+    ? pendingItems.map((item) => renderItem(item, true)).join("")
+    : `<div class="empty compact-empty">승인 대기 중인 후원 요청이 없습니다.</div>`;
+  $("#resolved-queue-count").textContent = `${resolvedItems.length}개`;
+  $("#queue-history").innerHTML = resolvedItems.length
+    ? resolvedItems.slice(0, 50).map((item) => renderItem(item, false)).join("")
+    : `<div class="empty compact-empty">아직 처리된 요청이 없습니다.</div>`;
 }
 
 function renderHistory() {
@@ -345,6 +356,13 @@ function bindEvents() {
         ? "제외 문구를 감지해 룰렛 요청에 반영하지 않았습니다."
         : "명령 또는 금액 조건에 맞지 않아 반영하지 않았습니다."
       : `후원 요청: ${result.action}`);
+  });
+  document.querySelectorAll(".example-chip").forEach((button) => {
+    button.addEventListener("click", () => {
+      $("#sim-text").value = button.dataset.donationExample;
+      $("#sim-text").focus();
+      $("#sim-text").select();
+    });
   });
   $("#queue-list").addEventListener("click", async (event) => {
     const item = event.target.closest("[data-request-id]");

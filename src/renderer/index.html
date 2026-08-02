@@ -110,23 +110,41 @@
 
     <section id="tab-donations" class="tab-page">
       <div class="panel donation-test">
-        <div>
+        <div class="donation-test-heading">
+          <div>
           <h2>후원 수신 테스트</h2>
-          <p>실제 결제 없이 명령 인식과 자동/수동 동작을 확인합니다.</p>
+            <p>실제 결제 없이 일반 게임명과 명령 인식, 자동/수동 동작을 확인합니다.</p>
+          </div>
+          <span class="status-pill">테스트 전용</span>
         </div>
         <form id="simulate-form">
           <input id="sim-donor" value="테스트시청자" placeholder="닉네임">
           <input id="sim-amount" type="number" value="1000" min="1" placeholder="금액">
-          <input id="sim-text" value="게임명 추가요" placeholder="후원 메시지">
+          <input id="sim-text" placeholder="게임 이름 또는 후원 명령을 자유롭게 입력">
           <button class="button" type="submit">가상 후원</button>
         </form>
+        <div class="donation-examples" aria-label="후원 메시지 예시">
+          <span>입력 예시</span>
+          <button class="example-chip" type="button" data-donation-example="게임 이름">게임 이름</button>
+          <button class="example-chip" type="button" data-donation-example="!게임추가 게임 이름">!게임추가 게임 이름</button>
+          <button class="example-chip" type="button" data-donation-example="게임 이름 추가요">게임 이름 추가요</button>
+          <button class="example-chip" type="button" data-donation-example="!게임빼기 게임 이름">!게임빼기 게임 이름</button>
+          <small>명령 없이 입력하면 메시지 전체를 게임 이름으로 처리합니다.</small>
+        </div>
       </div>
       <div class="panel">
         <div class="table-heading">
-          <div><h2>승인 대기열</h2><p>자동 모드에서도 미등록 게임은 이곳에서 확인합니다.</p></div>
+          <div><h2>승인 대기열</h2><p id="pending-queue-summary">자동 모드에서도 미등록 게임은 이곳에서 확인합니다.</p></div>
         </div>
         <div id="queue-list" class="queue-list"></div>
       </div>
+      <details class="panel queue-history-panel">
+        <summary>
+          <span><strong>처리 기록</strong><small>승인·거절이 끝난 요청</small></span>
+          <span id="resolved-queue-count" class="status-pill">0개</span>
+        </summary>
+        <div id="queue-history" class="queue-list resolved-history"></div>
+      </details>
     </section>
 
     <section id="tab-settings" class="tab-page settings-grid">

@@ -96,8 +96,14 @@ td.game-name { font-weight: 700; }
 .icon-button { background: none; border: 0; color: var(--muted); padding: 5px; }
 .icon-button:hover { color: var(--danger); }
 
-.donation-test { padding: 20px 22px; display: grid; grid-template-columns: 260px 1fr; align-items: end; gap: 20px; }
+.donation-test { padding: 20px 22px; display: grid; gap: 14px; }
+.donation-test-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; }
 .donation-test form { display: grid; grid-template-columns: 150px 120px 1fr auto; gap: 8px; }
+.donation-examples { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding-top: 2px; }
+.donation-examples > span { margin-right: 2px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.donation-examples > small { color: var(--muted); font-size: 11px; }
+.example-chip { padding: 6px 9px; border: 1px solid #304157; border-radius: 20px; background: #101a25; color: #b9ddea; font-size: 11px; }
+.example-chip:hover { border-color: var(--accent); color: var(--accent); }
 .queue-list, .history-list { min-height: 240px; padding: 12px; display: grid; align-content: start; gap: 8px; }
 .queue-item { padding: 14px; border: 1px solid var(--line); border-radius: 10px; display: grid; grid-template-columns: 1fr auto; gap: 10px; background: #0d141c; }
 .queue-item.resolved { opacity: .5; }
@@ -105,6 +111,15 @@ td.game-name { font-weight: 700; }
 .queue-actions { display: flex; gap: 6px; align-items: center; }
 .queue-actions input { width: 230px; }
 .empty { min-height: 160px; display: grid; place-items: center; color: var(--muted); }
+.compact-empty { min-height: 96px; }
+.queue-history-panel { overflow: hidden; }
+.queue-history-panel summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 17px 21px; cursor: pointer; list-style: none; }
+.queue-history-panel summary::-webkit-details-marker { display: none; }
+.queue-history-panel summary > span:first-child { display: grid; gap: 4px; }
+.queue-history-panel summary small { color: var(--muted); font-size: 11px; font-weight: 400; }
+.queue-history-panel[open] summary { border-bottom: 1px solid var(--line); }
+.resolved-history { min-height: 0; max-height: 340px; overflow: auto; }
+.resolved-history .queue-item { grid-template-columns: 1fr; }
 
 .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; }
 .settings-grid > .panel { padding: 24px; }
@@ -159,6 +174,9 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
   .primary-actions { grid-column: 1 / -1; flex-direction: row !important; border-top: 1px solid var(--line); }
   .settings-grid { grid-template-columns: 1fr; }
   .donation-test { grid-template-columns: 1fr; }
+  .donation-test form { grid-template-columns: 1fr 120px; }
+  #sim-text { grid-column: 1 / -1; }
+  .donation-test form .button { grid-column: 1 / -1; }
   .option-setting { grid-template-columns: 1fr; }
   .sound-setting { grid-template-columns: 1fr; }
   .list-footer { align-items: stretch; flex-direction: column; }

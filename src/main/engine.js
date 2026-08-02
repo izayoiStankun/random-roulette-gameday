@@ -273,6 +273,9 @@ class RouletteEngine extends EventEmitter {
     } else if (addSuffix && text.endsWith(addSuffix)) {
       kind = "add";
       gameName = normalizeName(text.slice(0, -addSuffix.length));
+    } else if (text) {
+      kind = "add";
+      gameName = text;
     }
 
     if (!kind || !gameName) return null;
