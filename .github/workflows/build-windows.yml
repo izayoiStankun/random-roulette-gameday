@@ -2,6 +2,15 @@ name: Build Windows EXE
 
 on:
   workflow_dispatch:
+    inputs:
+      channel:
+        description: Update channel for generated metadata
+        required: true
+        type: choice
+        default: beta
+        options:
+          - beta
+          - latest
   push:
     tags:
       - "v*"
@@ -19,12 +28,29 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run dist
+      - name: Choose update channel
+        id: release
+        shell: pwsh
+        run: |
+          $channel = if ("${{ github.event_name }}" -eq "workflow_dispatch") { "${{ inputs.channel }}" } elseif ("${{ github.ref_name }}" -match "-") { "beta" } else { "latest" }
+          $prerelease = ($channel -eq "beta").ToString().ToLower()
+          "channel=$channel" >> $env:GITHUB_OUTPUT
+          "prerelease=$prerelease" >> $env:GITHUB_OUTPUT
+      - name: Build Windows installers
+        run: npm run dist -- --config.publish.channel=${{ steps.release.outputs.channel }}
       - uses: actions/upload-artifact@v4
         with:
           name: roulette-broadcast-windows
-          path: release/*.exe
-      - uses: softprops/action-gh-release@v2
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/${{ steps.release.outputs.channel }}.yml
+      - uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: release/*.exe
+          prerelease: ${{ steps.release.outputs.prerelease }}
+          generate_release_notes: true
+          files: |
+            release/*.exe
+            release/*.blockmap
+            release/${{ steps.release.outputs.channel }}.yml

@@ -134,6 +134,31 @@
         <p class="help">OBS 소스 → 브라우저에서 위 URL을 넣고 1920×1080으로 설정하세요. localhost 통신이라 외부 인터넷을 사용하지 않습니다.</p>
         <button id="reset-event" class="button danger">회차·타이머·기록 초기화</button>
       </div>
+
+      <div class="panel update-panel">
+        <div class="update-heading">
+          <div>
+            <h2>앱 업데이트</h2>
+            <p id="update-version" class="help">현재 버전을 확인하는 중입니다.</p>
+          </div>
+          <span id="update-kind" class="status-pill">확인 중</span>
+        </div>
+        <p class="help">시작할 때 새 버전 유무만 확인합니다. 다운로드와 설치는 방송 운영자가 직접 눌러야 진행됩니다.</p>
+        <div class="segmented">
+          <button data-update-channel="latest" class="update-channel-button active">정식판만</button>
+          <button data-update-channel="beta" class="update-channel-button">테스트판 포함</button>
+        </div>
+        <div class="update-status-box">
+          <strong id="update-status">업데이트를 확인할 수 있습니다.</strong>
+          <progress id="update-progress" value="0" max="100" hidden></progress>
+        </div>
+        <div class="update-actions">
+          <button id="update-check" class="button">업데이트 확인</button>
+          <button id="update-download" class="button accent" disabled>다운로드</button>
+          <button id="update-install" class="button accent" disabled>설치 후 재시작</button>
+          <button id="update-open" class="button subtle">Release 페이지</button>
+        </div>
+      </div>
     </section>
 
     <section id="tab-history" class="tab-page">

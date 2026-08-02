@@ -1,10 +1,12 @@
 const path = require("node:path");
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const { RouletteEngine } = require("./engine");
 const { JsonStore } = require("./store");
 const { OverlayServer } = require("./overlay-server");
 const { ChzzkClient } = require("./chzzk-client");
 const { scanSteamLibraries } = require("./steam-library");
+const { UpdateService } = require("./update-service");
 
 let mainWindow;
 let store;
@@ -14,6 +16,8 @@ let chzzk;
 let saveTimer;
 let spinTimer;
 let autoSpinTimer;
+let updateService;
+let updateCheckTimer;
 
 function sendState(state = engine.snapshot()) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("state", state);
@@ -79,6 +83,7 @@ function installIpcHandlers() {
     switch (name) {
       case "settings:update":
         engine.updateSettings(payload);
+        if (payload.updateChannel) updateService.setChannel(engine.settings.updateChannel);
         return engine.snapshot();
       case "game:add":
         engine.addGame(payload.name, { slots: payload.slots, source: "manual" });
@@ -126,11 +131,28 @@ function installIpcHandlers() {
         throw new Error(`알 수 없는 명령: ${name}`);
     }
   });
+  ipcMain.handle("update:get-status", () => updateService.snapshot());
+  ipcMain.handle("update:check", () => updateService.check());
+  ipcMain.handle("update:download", () => updateService.download());
+  ipcMain.handle("update:install", () => updateService.install());
+  ipcMain.handle("update:open", () => updateService.openRelease());
 }
 
 app.whenReady().then(async () => {
   store = new JsonStore(app.getPath("userData"));
-  engine = new RouletteEngine(store.readState());
+  const savedState = store.readState();
+  if (!savedState.settings?.updateChannel && app.getVersion().includes("-")) {
+    savedState.settings = { ...(savedState.settings || {}), updateChannel: "beta" };
+  }
+  engine = new RouletteEngine(savedState);
+  updateService = new UpdateService({
+    currentVersion: app.getVersion(),
+    isPackaged: app.isPackaged,
+    isPortable: Boolean(process.env.PORTABLE_EXECUTABLE_FILE || process.env.PORTABLE_EXECUTABLE_DIR),
+    updater: autoUpdater,
+    openExternal: (url) => shell.openExternal(url)
+  });
+  updateService.setChannel(engine.settings.updateChannel);
   overlayServer = new OverlayServer({
     directory: path.join(__dirname, "..", "overlay"),
     port: engine.settings.overlayPort,
@@ -167,12 +189,16 @@ app.whenReady().then(async () => {
     store.writeSecrets({ ...secrets, tokens });
   });
   chzzk.on("donation", (donation) => engine.ingestDonation(donation));
+  updateService.on("status", (status) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("update:status", status);
+  });
   overlayServer.on("oauth-callback", (payload) => {
     chzzk.handleCallback(payload).catch((error) => chzzk.setStatus("error", error.message));
   });
 
   installIpcHandlers();
   createWindow();
+  updateCheckTimer = setTimeout(() => updateService.check(), 12000);
   setInterval(() => engine.tick(), 250);
 });
 
@@ -184,6 +210,7 @@ app.on("before-quit", () => {
   clearTimeout(saveTimer);
   clearTimeout(spinTimer);
   clearTimeout(autoSpinTimer);
+  clearTimeout(updateCheckTimer);
   if (store && engine) store.writeState(engine.persistentSnapshot());
   if (chzzk) chzzk.disconnect();
   if (overlayServer) overlayServer.close();

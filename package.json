@@ -1,6 +1,6 @@
 {
   "name": "roulette-broadcast",
-  "version": "0.1.1",
+  "version": "0.2.0-beta.1",
   "description": "치지직 후원과 OBS를 연동하는 랜덤 룰렛 게임데이 데스크톱 앱",
   "main": "src/main/index.js",
   "author": "Remilegi community",
@@ -12,6 +12,8 @@
     "dist": "electron-builder --win portable nsis --publish never"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
+    "semver": "^7.8.5",
     "ws": "^8.18.3"
   },
   "devDependencies": {
@@ -29,6 +31,15 @@
     "directories": {
       "output": "release"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "izayoiStankun",
+        "repo": "random-roulette-gameday",
+        "channel": "latest"
+      }
+    ],
+    "generateUpdatesFilesForAllChannels": true,
     "win": {
       "target": [
         "portable",
@@ -36,10 +47,10 @@
       ]
     },
     "portable": {
-      "artifactName": "${productName}-${version}-${arch}-portable.${ext}"
+      "artifactName": "random-roulette-gameday-${version}-${arch}-portable.${ext}"
     },
     "nsis": {
-      "artifactName": "${productName}-${version}-${arch}-setup.${ext}",
+      "artifactName": "random-roulette-gameday-${version}-${arch}-setup.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true

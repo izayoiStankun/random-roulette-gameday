@@ -31,6 +31,24 @@ npm run dist
 
 `release` 폴더에 `-portable.exe` 무설치판과 `-setup.exe` 설치형이 생성됩니다. GitHub Actions로 자동 빌드할 경우에도 같은 명령을 사용합니다.
 
+## 업데이트와 Release 채널
+
+- 정식판: `v0.2.0`처럼 prerelease 표기가 없는 태그를 사용합니다. 앱의 `정식판만` 채널이 받습니다.
+- 테스트판: `v0.2.0-beta.1`처럼 `-beta.N`이 붙은 태그를 사용합니다. GitHub prerelease로 배포되며 `테스트판 포함` 채널이 받습니다.
+- 설치형 `-setup.exe`: 앱에서 새 버전을 확인하고, 운영자가 다운로드와 `설치 후 재시작`을 직접 실행할 수 있습니다.
+- 포터블 `-portable.exe`: 새 버전을 확인한 뒤 Release 페이지에서 EXE를 내려받아 직접 교체합니다.
+
+앱은 시작 12초 뒤 업데이트 유무만 확인합니다. 방송 중 네트워크와 재시작에 영향을 주지 않도록 자동 다운로드와 자동 설치는 하지 않습니다. GitHub Release에는 EXE와 함께 채널별 YAML 및 설치형 blockmap 파일이 있어야 합니다.
+
+테스트판 배포 예시:
+
+```powershell
+git tag v0.2.0-beta.1
+git push origin v0.2.0-beta.1
+```
+
+태그 푸시 후 GitHub Actions가 Windows 파일을 빌드하고 prerelease를 생성합니다. 실제 자동 업데이트 왕복 테스트는 `beta.1` 설치 후 `beta.2`를 배포해 확인합니다.
+
 ## OBS 설정
 
 1. 앱을 먼저 실행합니다.

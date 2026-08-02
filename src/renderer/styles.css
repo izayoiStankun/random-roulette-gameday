@@ -96,14 +96,19 @@ td.game-name { font-weight: 700; }
 .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; }
 .settings-grid > .panel { padding: 24px; }
 .segmented { display: grid; grid-template-columns: 1fr 1fr; background: #0a1017; padding: 4px; border-radius: 10px; margin-top: 15px; }
-.mode-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
-.mode-button.active { background: #1d2b39; color: var(--accent); }
+.mode-button, .update-channel-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
+.mode-button.active, .update-channel-button.active { background: #1d2b39; color: var(--accent); }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 21px; }
 label { display: grid; gap: 6px; color: #b5bfca; font-size: 12px; }
 .wide { grid-column: 1 / -1; }
 .stack-form { display: grid; gap: 12px; margin: 18px 0; }
 code { display: block; padding: 11px; background: #090f16; border: 1px solid #273342; color: var(--accent); border-radius: 7px; overflow-wrap: anywhere; margin: 12px 0; }
 hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+.update-panel { grid-column: 1 / -1; }
+.update-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.update-status-box { display: grid; gap: 10px; margin: 16px 0; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: #0b1119; font-size: 13px; }
+.update-status-box progress { width: 100%; accent-color: var(--accent); }
+.update-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .history-item { display: grid; grid-template-columns: 80px 1fr 180px; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); padding: 12px; font-size: 13px; }
 .history-item strong.end { color: var(--danger); }
 

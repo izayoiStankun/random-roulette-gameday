@@ -1,6 +1,7 @@
 let state;
 let toastTimer;
 let currentTab = "games";
+let updateStatus;
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value ?? "")
@@ -63,6 +64,9 @@ function render(nextState) {
 
   document.querySelectorAll(".mode-button").forEach((button) => {
     button.classList.toggle("active", button.dataset.mode === state.settings.mode);
+  });
+  document.querySelectorAll(".update-channel-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.updateChannel === state.settings.updateChannel);
   });
   $("#queue-count").textContent = state.queue.filter((item) => item.status === "pending").length;
   renderGames();
@@ -195,6 +199,12 @@ function bindEvents() {
   document.querySelectorAll(".mode-button").forEach((button) => {
     button.addEventListener("click", () => command("settings:update", { mode: button.dataset.mode }));
   });
+  document.querySelectorAll(".update-channel-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await command("settings:update", { updateChannel: button.dataset.updateChannel });
+      showToast(button.dataset.updateChannel === "beta" ? "테스트판 업데이트도 확인합니다." : "정식판 업데이트만 확인합니다.");
+    });
+  });
   $("#rules-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await command("settings:update", {
@@ -224,6 +234,33 @@ function bindEvents() {
       await command("event:reset");
     }
   });
+  $("#update-check").addEventListener("click", () => runUpdateAction(() => window.roulette.checkForUpdates()));
+  $("#update-download").addEventListener("click", () => runUpdateAction(() => window.roulette.downloadUpdate()));
+  $("#update-install").addEventListener("click", () => runUpdateAction(() => window.roulette.installUpdate()));
+  $("#update-open").addEventListener("click", () => runUpdateAction(() => window.roulette.openUpdatePage()));
+}
+
+async function runUpdateAction(action) {
+  try {
+    const result = await action();
+    if (result?.phase) renderUpdateStatus(result);
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+function renderUpdateStatus(status) {
+  updateStatus = status;
+  $("#update-version").textContent = `현재 ${status.currentVersion}${status.availableVersion ? ` · 새 버전 ${status.availableVersion}` : ""}`;
+  $("#update-kind").textContent = status.isPortable ? "포터블" : "설치형";
+  $("#update-status").textContent = status.message;
+  const downloading = status.phase === "downloading";
+  $("#update-progress").hidden = !downloading;
+  $("#update-progress").value = status.progress || 0;
+  $("#update-check").disabled = ["checking", "downloading"].includes(status.phase);
+  $("#update-download").disabled = status.phase !== "available";
+  $("#update-download").textContent = status.isPortable ? "다운로드 페이지 열기" : "다운로드";
+  $("#update-install").disabled = status.isPortable || status.phase !== "downloaded";
 }
 
 function updateChzzkStatus(status) {
@@ -239,6 +276,8 @@ async function initialize() {
   $("#chzzk-reconnect").disabled = !summary.hasCredentials;
   window.roulette.onState(render);
   window.roulette.onChzzkStatus(updateChzzkStatus);
+  renderUpdateStatus(await window.roulette.getUpdateStatus());
+  window.roulette.onUpdateStatus(renderUpdateStatus);
 }
 
 initialize().catch((error) => showToast(error.message, true));

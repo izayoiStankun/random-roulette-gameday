@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   endDeltaMin: -5,
   endDeltaMax: 10,
   overlayPort: 17554,
+  updateChannel: "latest",
   addPrefix: "!게임추가",
   addSuffix: "추가요",
   removePrefix: "!게임빼기"
@@ -79,6 +80,7 @@ class RouletteEngine extends EventEmitter {
   updateSettings(patch) {
     const next = { ...this.settings, ...patch };
     next.mode = next.mode === "auto" ? "auto" : "manual";
+    next.updateChannel = next.updateChannel === "beta" ? "beta" : "latest";
     next.roundDurationSec = clamp(Number(next.roundDurationSec) || 1800, 10, 86400);
     next.endChanceStart = clamp(Number(next.endChanceStart) || 5, 0, 100);
     next.endChanceMin = clamp(Number(next.endChanceMin) || 3, 0, 100);
