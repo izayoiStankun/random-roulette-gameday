@@ -91,9 +91,16 @@ Access Token은 1일, Refresh Token은 30일 유효합니다. 앱은 만료 전 
 
 ## Steam 게임 목록
 
-`설치된 Steam 게임 불러오기`는 현재 PC의 `libraryfolders.vdf`와 `appmanifest_*.acf`를 읽습니다. 인터넷 없이 실제 설치·실행 가능한 게임을 확인하는 방식입니다.
+`이 PC의 설치 게임 불러오기`는 현재 PC의 `libraryfolders.vdf`와 `appmanifest_*.acf`를 읽습니다. 인터넷 없이 실제 설치·실행 가능한 게임을 확인하는 방식입니다.
 
-Steam 프로필의 전체 보유 게임은 로그인 없이 목록 제공이 제한될 수 있으므로 현재 자동 수집 대상이 아닙니다. 미설치 보유 게임은 앱에서 직접 추가할 수 있습니다. 추후 Steam Web API Key 또는 내보낸 CSV/JSON 가져오기를 추가할 수 있습니다.
+OBS PC와 게임 PC가 분리된 경우 `다른 PC의 Steam 보유 게임 불러오기`를 사용합니다.
+
+1. [Steam Web API 키](https://steamcommunity.com/dev/apikey)를 발급합니다.
+2. Steam 프로필의 개인정보 설정에서 `게임 세부 정보`를 공개로 바꿉니다.
+3. 앱에 대상 프로필 주소 또는 SteamID64와 API 키를 입력합니다.
+4. `웹 보유 목록 불러오기`를 누릅니다.
+
+API 키와 프로필 주소는 Electron의 Windows 보안 저장소로 암호화하며, 저장된 API 키는 화면에 다시 표시하지 않습니다. Steam Web API는 보유 목록만 제공하므로 이 방식으로 가져온 게임은 `보유`로 표시됩니다. 게임 PC의 실제 설치 여부는 원격으로 확인하지 않습니다.
 
 ## 운영 전에 확인할 점
 

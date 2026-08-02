@@ -7,6 +7,7 @@ const { JsonStore } = require("./store");
 const { OverlayServer } = require("./overlay-server");
 const { ChzzkClient } = require("./chzzk-client");
 const { scanSteamLibraries } = require("./steam-library");
+const { fetchOwnedGames } = require("./steam-web-api");
 const { UpdateService } = require("./update-service");
 const { isValidLocation } = require("./sunrise");
 const { getWindowsLocation } = require("./windows-location");
@@ -69,7 +70,9 @@ function installIpcHandlers() {
     const secrets = store.readSecrets();
     return {
       hasCredentials: Boolean(secrets.clientId && secrets.clientSecret),
-      clientId: secrets.clientId || ""
+      clientId: secrets.clientId || "",
+      hasSteamApiKey: Boolean(secrets.steamApiKey),
+      steamProfile: secrets.steamProfile || ""
     };
   });
   ipcMain.handle("chzzk:authorize", (_event, credentials) => {
@@ -155,6 +158,25 @@ function installIpcHandlers() {
         const result = engine.mergeGames(games);
         return { ...result, found: games.length };
       }
+      case "steam:web-import": {
+        const secrets = store.readSecrets();
+        const apiKey = String(payload?.apiKey || secrets.steamApiKey || "").trim();
+        const profile = String(payload?.profile || secrets.steamProfile || "").trim();
+        const imported = await fetchOwnedGames({ apiKey, profile });
+        store.writeSecrets({
+          ...secrets,
+          steamApiKey: apiKey,
+          steamProfile: profile
+        });
+        const result = engine.mergeGames(imported.games, "steam-web");
+        return { ...result, found: imported.games.length, steamId: imported.steamId };
+      }
+      case "steam:key-page":
+        await shell.openExternal("https://steamcommunity.com/dev/apikey");
+        return { ok: true };
+      case "steam:privacy-page":
+        await shell.openExternal("https://steamcommunity.com/my/edit/settings");
+        return { ok: true };
       case "request:resolve":
         engine.resolveRequest(payload.id, payload.decision, payload.gameName);
         return engine.snapshot();

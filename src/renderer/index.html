@@ -55,10 +55,30 @@
           <button class="button" type="submit">직접 추가</button>
         </form>
         <div class="toolbar-actions">
-          <button id="steam-scan" class="button">설치된 Steam 게임 불러오기</button>
+          <button id="steam-scan" class="button">이 PC의 설치 게임 불러오기</button>
           <button id="overlay-open" class="button subtle">OBS 화면 미리보기</button>
         </div>
       </div>
+      <details class="panel steam-web-panel">
+        <summary>
+          <span><strong>다른 PC의 Steam 보유 게임 불러오기</strong><small>Steam 웹 연동 · 게임 PC에 앱 설치 불필요</small></span>
+          <span id="steam-web-status" class="status-pill">설정 안 됨</span>
+        </summary>
+        <form id="steam-web-form" class="steam-web-form">
+          <label>Steam 프로필 주소 또는 SteamID64
+            <input id="steam-profile" value="https://steamcommunity.com/profiles/76561198305422127" placeholder="https://steamcommunity.com/profiles/..."></label>
+          <label>Steam Web API 키
+            <input id="steam-api-key" type="password" autocomplete="off" placeholder="발급받은 키 입력"></label>
+          <button id="steam-web-import" class="button accent" type="submit">웹 보유 목록 불러오기</button>
+        </form>
+        <div class="steam-web-help">
+          <p>웹에서는 보유 여부만 확인합니다. 게임 PC의 실제 설치 여부는 확인할 수 없습니다. Steam 프로필의 <strong>게임 세부 정보</strong>가 공개여야 합니다.</p>
+          <div>
+            <button id="steam-key-page" class="button subtle" type="button">API 키 발급 페이지</button>
+            <button id="steam-privacy-page" class="button subtle" type="button">Steam 공개 설정</button>
+          </div>
+        </div>
+      </details>
       <div class="panel table-panel">
         <div class="table-heading">
           <div>

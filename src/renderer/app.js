@@ -289,6 +289,27 @@ function bindEvents() {
     const result = await command("steam:scan");
     showToast(`Steam ${result.found}개 확인: ${result.added}개 추가, ${result.updated}개 갱신`);
   });
+  $("#steam-web-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = $("#steam-web-import");
+    button.disabled = true;
+    button.textContent = "Steam에서 불러오는 중…";
+    try {
+      const result = await command("steam:web-import", {
+        profile: $("#steam-profile").value.trim(),
+        apiKey: $("#steam-api-key").value.trim()
+      });
+      $("#steam-api-key").value = "";
+      $("#steam-api-key").placeholder = "저장된 키 사용 (변경할 때만 입력)";
+      $("#steam-web-status").textContent = `연결됨 · ${result.steamId}`;
+      showToast(`Steam 보유 게임 ${result.found}개 확인: ${result.added}개 추가, ${result.updated}개 갱신`);
+    } finally {
+      button.disabled = false;
+      button.textContent = "웹 보유 목록 불러오기";
+    }
+  });
+  $("#steam-key-page").addEventListener("click", () => command("steam:key-page"));
+  $("#steam-privacy-page").addEventListener("click", () => command("steam:privacy-page"));
   $("#overlay-open").addEventListener("click", () => command("overlay:open"));
 
   $("#spin").addEventListener("click", () => command("spin"));
@@ -434,6 +455,11 @@ async function initialize() {
   const summary = await window.roulette.getSecretsSummary();
   $("#client-id").value = summary.clientId;
   $("#chzzk-reconnect").disabled = !summary.hasCredentials;
+  if (summary.steamProfile) $("#steam-profile").value = summary.steamProfile;
+  if (summary.hasSteamApiKey) {
+    $("#steam-api-key").placeholder = "저장된 키 사용 (변경할 때만 입력)";
+    $("#steam-web-status").textContent = "API 키 저장됨";
+  }
   window.roulette.onState(render);
   window.roulette.onChzzkStatus(updateChzzkStatus);
   renderUpdateStatus(await window.roulette.getUpdateStatus());
