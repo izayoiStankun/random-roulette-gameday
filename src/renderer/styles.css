@@ -109,8 +109,8 @@ td.game-name { font-weight: 700; }
 .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; }
 .settings-grid > .panel { padding: 24px; }
 .segmented { display: grid; grid-template-columns: 1fr 1fr; background: #0a1017; padding: 4px; border-radius: 10px; margin-top: 15px; }
-.mode-button, .update-channel-button, .sunrise-mode-button, .preview-mode-button, .sound-output-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
-.mode-button.active, .update-channel-button.active, .sunrise-mode-button.active, .preview-mode-button.active, .sound-output-button.active { background: #1d2b39; color: var(--accent); }
+.mode-button, .update-channel-button, .sunrise-mode-button, .preview-mode-button, .sound-output-button, .wheel-provider-button, .remove-winner-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
+.mode-button.active, .update-channel-button.active, .sunrise-mode-button.active, .preview-mode-button.active, .sound-output-button.active, .wheel-provider-button.active, .remove-winner-button.active { background: #1d2b39; color: var(--accent); }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 21px; }
 label { display: grid; gap: 6px; color: #b5bfca; font-size: 12px; }
 .wide { grid-column: 1 / -1; }
@@ -136,6 +136,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 .sound-test-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 .sound-test-actions .button { padding-inline: 8px; font-size: 11px; white-space: nowrap; }
 .privacy-note { margin: 14px 0 0; padding: 11px 13px; border-radius: 8px; background: #12222a; color: #9bc5d4; font-size: 12px; line-height: 1.6; }
+.wheel-api-form { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 9px; margin-top: 13px; }
 .probability-cell { width: 130px; display: grid; grid-template-columns: 48px 1fr; gap: 8px; align-items: center; color: #b9ddea; font: 700 11px ui-monospace, monospace; }
 .probability-cell > i { display: block; height: 5px; border-radius: 5px; background: #263543; overflow: hidden; }
 .probability-cell > i::after { content: ""; display: block; width: var(--probability); height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }

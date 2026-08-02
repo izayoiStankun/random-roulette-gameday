@@ -8,6 +8,7 @@ const { OverlayServer } = require("./overlay-server");
 const { ChzzkClient } = require("./chzzk-client");
 const { scanSteamLibraries } = require("./steam-library");
 const { fetchOwnedGames } = require("./steam-web-api");
+const { createSpinAnimation } = require("./wheel-of-names-client");
 const { UpdateService } = require("./update-service");
 const { isValidLocation } = require("./sunrise");
 const { getWindowsLocation } = require("./windows-location");
@@ -27,6 +28,7 @@ let updateService;
 let updateCheckTimer;
 let tickInterval;
 let sunriseInterval;
+let spinInFlight = false;
 
 function sendState(state = engine.snapshot()) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("state", state);
@@ -41,6 +43,47 @@ function scheduleSave() {
 function scheduleSpinFinalize(spin) {
   clearTimeout(spinTimer);
   spinTimer = setTimeout(() => engine.finalizeSpin(spin.id), 6500);
+}
+
+function sendWheelStatus(phase, message) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("wheel:status", { phase, message });
+  }
+}
+
+async function beginConfiguredSpin() {
+  if (spinInFlight) throw new Error("룰렛 결과를 이미 생성하고 있습니다.");
+  spinInFlight = true;
+  try {
+    if (engine.settings.wheelProvider !== "wheelofnames") {
+      return engine.beginSpin({ provider: "local" });
+    }
+    const context = engine.prepareSpin();
+    try {
+      sendWheelStatus("generating", "Wheel of Names 회전 영상을 만드는 중입니다…");
+      const secrets = store.readSecrets();
+      const generated = await createSpinAnimation({
+        apiKey: secrets.wheelOfNamesApiKey,
+        context
+      });
+      const animationVersion = `${Date.now()}`;
+      overlayServer.setWheelAnimation({
+        version: animationVersion,
+        data: generated.animation,
+        contentType: generated.contentType
+      });
+      sendWheelStatus("connected", "Wheel of Names 연결됨");
+      return engine.beginPreparedSpin(context, generated.winnerId, {
+        provider: "wheelofnames",
+        animationVersion
+      });
+    } catch (error) {
+      sendWheelStatus("fallback", `${error.message} 기존 로컬 룰렛으로 진행합니다.`);
+      return engine.beginSpin({ provider: "local", fallbackReason: error.message });
+    }
+  } finally {
+    spinInFlight = false;
+  }
 }
 
 function createWindow() {
@@ -72,7 +115,8 @@ function installIpcHandlers() {
       hasCredentials: Boolean(secrets.clientId && secrets.clientSecret),
       clientId: secrets.clientId || "",
       hasSteamApiKey: Boolean(secrets.steamApiKey),
-      steamProfile: secrets.steamProfile || ""
+      steamProfile: secrets.steamProfile || "",
+      hasWheelOfNamesApiKey: Boolean(secrets.wheelOfNamesApiKey)
     };
   });
   ipcMain.handle("chzzk:authorize", (_event, credentials) => {
@@ -177,11 +221,28 @@ function installIpcHandlers() {
       case "steam:privacy-page":
         await shell.openExternal("https://steamcommunity.com/my/edit/settings");
         return { ok: true };
+      case "wheel:settings": {
+        const secrets = store.readSecrets();
+        const apiKey = String(payload?.apiKey || secrets.wheelOfNamesApiKey || "").trim();
+        const provider = payload?.provider === "wheelofnames" ? "wheelofnames" : "local";
+        if (provider === "wheelofnames" && !apiKey) {
+          throw new Error("Wheel of Names API 키를 먼저 입력해 주세요.");
+        }
+        if (payload?.apiKey) {
+          store.writeSecrets({ ...secrets, wheelOfNamesApiKey: apiKey });
+        }
+        engine.updateSettings({ wheelProvider: provider });
+        sendWheelStatus(
+          provider === "wheelofnames" ? "connected" : "local",
+          provider === "wheelofnames" ? "Wheel of Names 사용 준비됨" : "기존 로컬 룰렛 사용 중"
+        );
+        return { provider, hasApiKey: Boolean(apiKey) };
+      }
       case "request:resolve":
         engine.resolveRequest(payload.id, payload.decision, payload.gameName);
         return engine.snapshot();
       case "spin": {
-        const spin = engine.beginSpin();
+        const spin = await beginConfiguredSpin();
         scheduleSpinFinalize(spin);
         return spin;
       }
@@ -258,9 +319,9 @@ app.whenReady().then(async () => {
     scheduleSave();
     clearTimeout(autoSpinTimer);
     if (state.status === "awaiting_spin" && state.settings.mode === "auto") {
-      autoSpinTimer = setTimeout(() => {
+      autoSpinTimer = setTimeout(async () => {
         try {
-          const spin = engine.beginSpin();
+          const spin = await beginConfiguredSpin();
           scheduleSpinFinalize(spin);
         } catch (error) {
           chzzk.setStatus("error", `자동 룰렛 실패: ${error.message}`);

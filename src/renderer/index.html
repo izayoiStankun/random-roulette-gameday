@@ -146,6 +146,7 @@
           <label>추가 명령 접두사<input id="add-prefix"></label>
           <label>추가 명령 접미사<input id="add-suffix"></label>
           <label>제거 명령 접두사<input id="remove-prefix"></label>
+          <label class="wide">룰렛 제외 문구 (쉼표로 구분)<input id="donation-exclude" placeholder="예: 룰렛제외, 게임추가금지"></label>
           <button class="button accent wide" type="submit">규칙 저장</button>
         </form>
       </div>
@@ -194,6 +195,33 @@
 
       <div class="panel broadcast-options">
         <h2>OBS 표시 옵션</h2>
+        <div class="option-setting wheel-provider-setting">
+          <div>
+            <strong>룰렛 방식</strong>
+            <p id="wheel-provider-status" class="help">기존 로컬 룰렛 사용 중</p>
+          </div>
+          <div class="segmented compact">
+            <button data-wheel-provider="local" class="wheel-provider-button active">로컬</button>
+            <button data-wheel-provider="wheelofnames" class="wheel-provider-button">Wheel of Names</button>
+          </div>
+        </div>
+        <form id="wheel-api-form" class="wheel-api-form">
+          <label>Wheel of Names API 키<input id="wheel-api-key" type="password" autocomplete="off" placeholder="발급받은 키 입력"></label>
+          <button class="button accent" type="submit">키 저장 후 사용</button>
+        </form>
+        <p class="privacy-note">API 키는 Windows 보안 저장소에만 암호화합니다. 외부 서비스가 응답하지 않으면 방송을 멈추지 않고 기존 로컬 룰렛으로 자동 진행합니다.</p>
+        <hr>
+        <div class="option-setting">
+          <div>
+            <strong>당첨 게임 자동 삭제</strong>
+            <p class="help">ON이면 룰렛에 걸린 게임을 다음 라운드 목록에서 완전히 제거합니다.</p>
+          </div>
+          <div class="segmented compact">
+            <button data-remove-winner="off" class="remove-winner-button active">OFF</button>
+            <button data-remove-winner="on" class="remove-winner-button">ON</button>
+          </div>
+        </div>
+        <hr>
         <div class="option-setting">
           <div>
             <strong>썬라이즈 카운트다운</strong>

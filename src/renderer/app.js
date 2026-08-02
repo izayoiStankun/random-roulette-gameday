@@ -99,6 +99,12 @@ function render(nextState) {
   document.querySelectorAll(".sound-output-button").forEach((button) => {
     button.classList.toggle("active", button.dataset.soundOutput === state.settings.soundOutput);
   });
+  document.querySelectorAll(".wheel-provider-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.wheelProvider === state.settings.wheelProvider);
+  });
+  document.querySelectorAll(".remove-winner-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.removeWinner === (state.settings.removeWinnerAfterSpin ? "on" : "off"));
+  });
   $("#sound-volume").value = state.settings.soundVolume;
   $("#sound-volume-value").textContent = `${state.settings.soundVolume}%`;
   renderSunriseStatus();
@@ -211,6 +217,7 @@ function populateSettings() {
   $("#add-prefix").value = settings.addPrefix;
   $("#add-suffix").value = settings.addSuffix;
   $("#remove-prefix").value = settings.removePrefix;
+  $("#donation-exclude").value = settings.donationExcludeKeywords;
   $("#redirect-uri").textContent = `http://127.0.0.1:${settings.overlayPort}/oauth/callback`;
   $("#overlay-uri").textContent = `http://127.0.0.1:${settings.overlayPort}/overlay/`;
 }
@@ -312,7 +319,16 @@ function bindEvents() {
   $("#steam-privacy-page").addEventListener("click", () => command("steam:privacy-page"));
   $("#overlay-open").addEventListener("click", () => command("overlay:open"));
 
-  $("#spin").addEventListener("click", () => command("spin"));
+  $("#spin").addEventListener("click", async () => {
+    const button = $("#spin");
+    button.disabled = true;
+    button.textContent = state.settings.wheelProvider === "wheelofnames" ? "룰렛 영상 생성 중…" : "룰렛 회전 중…";
+    try {
+      await command("spin");
+    } finally {
+      button.textContent = "룰렛 돌리기";
+    }
+  });
   $("#timer-toggle").addEventListener("click", () => command(state.timer.running ? "timer:pause" : "timer:start"));
   $("#finish-game").addEventListener("click", () => command("game:finish"));
 
@@ -324,7 +340,11 @@ function bindEvents() {
       donationText: $("#sim-text").value,
       donationType: "CHAT"
     });
-    showToast(result.action === "ignored" ? "명령 또는 금액 조건에 맞지 않아 반영하지 않았습니다." : `후원 요청: ${result.action}`);
+    showToast(result.action === "ignored"
+      ? result.reason === "excluded-message"
+        ? "제외 문구를 감지해 룰렛 요청에 반영하지 않았습니다."
+        : "명령 또는 금액 조건에 맞지 않아 반영하지 않았습니다."
+      : `후원 요청: ${result.action}`);
   });
   $("#queue-list").addEventListener("click", async (event) => {
     const item = event.target.closest("[data-request-id]");
@@ -364,6 +384,28 @@ function bindEvents() {
       soundOutput: button.dataset.soundOutput
     }));
   });
+  document.querySelectorAll(".wheel-provider-button").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const provider = button.dataset.wheelProvider;
+      await command("wheel:settings", { provider });
+      showToast(provider === "wheelofnames" ? "Wheel of Names 룰렛을 사용합니다." : "기존 로컬 룰렛을 사용합니다.");
+    });
+  });
+  $("#wheel-api-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await command("wheel:settings", {
+      provider: "wheelofnames",
+      apiKey: $("#wheel-api-key").value.trim()
+    });
+    $("#wheel-api-key").value = "";
+    $("#wheel-api-key").placeholder = "저장된 키 사용 (변경할 때만 입력)";
+    showToast("Wheel of Names API 키를 안전하게 저장했습니다.");
+  });
+  document.querySelectorAll(".remove-winner-button").forEach((button) => {
+    button.addEventListener("click", () => command("settings:update", {
+      removeWinnerAfterSpin: button.dataset.removeWinner === "on"
+    }));
+  });
   $("#sound-volume").addEventListener("input", (event) => {
     $("#sound-volume-value").textContent = `${event.target.value}%`;
   });
@@ -382,7 +424,8 @@ function bindEvents() {
       endDeltaMax: Number($("#delta-max").value),
       addPrefix: $("#add-prefix").value,
       addSuffix: $("#add-suffix").value,
-      removePrefix: $("#remove-prefix").value
+      removePrefix: $("#remove-prefix").value,
+      donationExcludeKeywords: $("#donation-exclude").value
     });
     showToast("규칙을 저장했습니다.");
   });
@@ -449,6 +492,11 @@ function updateChzzkStatus(status) {
   $("#chzzk-dot").className = `dot ${status.phase === "connected" ? "connected" : status.phase === "error" ? "error" : ""}`;
 }
 
+function updateWheelStatus(status) {
+  $("#wheel-provider-status").textContent = status.message;
+  if (status.phase === "fallback") showToast(status.message, true);
+}
+
 async function initialize() {
   bindEvents();
   render(await window.roulette.getState());
@@ -460,10 +508,17 @@ async function initialize() {
     $("#steam-api-key").placeholder = "저장된 키 사용 (변경할 때만 입력)";
     $("#steam-web-status").textContent = "API 키 저장됨";
   }
+  if (summary.hasWheelOfNamesApiKey) {
+    $("#wheel-api-key").placeholder = "저장된 키 사용 (변경할 때만 입력)";
+    $("#wheel-provider-status").textContent = state.settings.wheelProvider === "wheelofnames"
+      ? "Wheel of Names 사용 준비됨"
+      : "API 키 저장됨 · 현재 로컬 룰렛";
+  }
   window.roulette.onState(render);
   window.roulette.onChzzkStatus(updateChzzkStatus);
   renderUpdateStatus(await window.roulette.getUpdateStatus());
   window.roulette.onUpdateStatus(renderUpdateStatus);
+  window.roulette.onWheelStatus(updateWheelStatus);
 }
 
 initialize().catch((error) => showToast(error.message, true));

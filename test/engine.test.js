@@ -71,6 +71,31 @@ test("자동 모드는 확인된 게임 요청만 즉시 반영한다", () => {
   assert.equal(unknown.action, "queued");
 });
 
+test("설정한 제외 문구가 있는 후원은 룰렛 요청에 반영하지 않는다", () => {
+  const engine = new RouletteEngine({ settings: { donationExcludeKeywords: "룰렛제외, 게임추가금지" } });
+  const result = engine.ingestDonation({
+    donatorNickname: "시청자",
+    payAmount: "5000",
+    donationText: "새 게임 추가요 룰렛제외"
+  });
+  assert.equal(result.action, "ignored");
+  assert.equal(result.reason, "excluded-message");
+  assert.equal(engine.queue.length, 0);
+  assert.equal(engine.games.length, 0);
+});
+
+test("외부 룰렛 당첨 결과를 확정하고 ON이면 당첨 게임을 목록에서 삭제한다", () => {
+  const engine = new RouletteEngine({ settings: { removeWinnerAfterSpin: true } });
+  const game = engine.addGame("삭제될 게임");
+  const context = engine.prepareSpin();
+  const spin = engine.beginPreparedSpin(context, game.id, { provider: "wheelofnames", animationVersion: "123" });
+  assert.equal(spin.provider, "wheelofnames");
+  assert.equal(spin.resultName, "삭제될 게임");
+  engine.finalizeSpin(spin.id);
+  assert.equal(engine.currentGame.name, "삭제될 게임");
+  assert.equal(engine.games.length, 0);
+});
+
 test("게임 제거는 2000원당 한 칸이다", () => {
   const engine = new RouletteEngine();
   engine.addGame("경쟁 게임", { slots: 5 });

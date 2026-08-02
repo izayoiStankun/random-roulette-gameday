@@ -26,5 +26,10 @@ contextBridge.exposeInMainWorld("roulette", {
     const listener = (_event, status) => callback(status);
     ipcRenderer.on("update:status", listener);
     return () => ipcRenderer.off("update:status", listener);
+  },
+  onWheelStatus: (callback) => {
+    const listener = (_event, status) => callback(status);
+    ipcRenderer.on("wheel:status", listener);
+    return () => ipcRenderer.off("wheel:status", listener);
   }
 });

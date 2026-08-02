@@ -1,5 +1,7 @@
 const canvas = document.querySelector("#wheel");
 const context = canvas.getContext("2d");
+const wheelAnimation = document.querySelector("#wheel-animation");
+const localWheelDecorations = document.querySelectorAll(".local-wheel-decoration");
 const wheelScene = document.querySelector("#wheel-scene");
 const gameHud = document.querySelector("#game-hud");
 const endScene = document.querySelector("#end-scene");
@@ -99,6 +101,9 @@ function drawWheel(slices) {
 }
 
 function spinWheel(spin) {
+  wheelAnimation.hidden = true;
+  canvas.hidden = false;
+  localWheelDecorations.forEach((element) => { element.hidden = false; });
   const slices = buildSlices(spin);
   drawWheel(slices);
   let cursor = 0;
@@ -116,6 +121,13 @@ function spinWheel(spin) {
   void canvas.offsetWidth;
   canvas.style.transition = "transform 6s cubic-bezier(.12,.72,.08,1)";
   canvas.style.transform = `rotate(${360 * 8 - targetCenter}deg)`;
+}
+
+function showWheelOfNamesAnimation(spin) {
+  canvas.hidden = true;
+  localWheelDecorations.forEach((element) => { element.hidden = true; });
+  wheelAnimation.hidden = false;
+  wheelAnimation.src = `/wheel-animation/${encodeURIComponent(spin.animationVersion)}.webp`;
 }
 
 function showDonation(donation) {
@@ -213,7 +225,11 @@ function render(nextState) {
       : "게임 룰렛";
     if (state.spin.id !== lastSpinId) {
       lastSpinId = state.spin.id;
-      spinWheel(state.spin);
+      if (state.spin.provider === "wheelofnames" && state.spin.animationVersion) {
+        showWheelOfNamesAnimation(state.spin);
+      } else {
+        spinWheel(state.spin);
+      }
     }
   }
   if (showHud) {

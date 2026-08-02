@@ -20,6 +20,7 @@ class OverlayServer extends EventEmitter {
     this.getState = getState;
     this.clients = new Set();
     this.server = null;
+    this.wheelAnimation = null;
   }
 
   start() {
@@ -55,6 +56,24 @@ class OverlayServer extends EventEmitter {
         "Access-Control-Allow-Origin": "*"
       });
       response.end(JSON.stringify(this.getState()));
+      return;
+    }
+
+    if (url.pathname.startsWith("/wheel-animation/")) {
+      const expectedPath = this.wheelAnimation
+        ? `/wheel-animation/${this.wheelAnimation.version}.webp`
+        : null;
+      if (!expectedPath || url.pathname !== expectedPath) {
+        response.writeHead(404);
+        response.end("Not found");
+        return;
+      }
+      response.writeHead(200, {
+        "Content-Type": this.wheelAnimation.contentType,
+        "Content-Length": this.wheelAnimation.data.length,
+        "Cache-Control": "no-store"
+      });
+      response.end(this.wheelAnimation.data);
       return;
     }
 
@@ -98,6 +117,14 @@ class OverlayServer extends EventEmitter {
         this.clients.delete(response);
       }
     }
+  }
+
+  setWheelAnimation({ version, data, contentType }) {
+    this.wheelAnimation = {
+      version: String(version),
+      data: Buffer.from(data),
+      contentType: contentType || "image/webp"
+    };
   }
 
   close() {
