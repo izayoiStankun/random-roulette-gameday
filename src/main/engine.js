@@ -1,6 +1,7 @@
 const { EventEmitter } = require("node:events");
 const { randomBytes, randomInt } = require("node:crypto");
 const { getSunriseStatus, isValidLocation } = require("./sunrise");
+const { DEFAULT_OVERLAY_PORT } = require("./app-config");
 
 const DEFAULT_SETTINGS = Object.freeze({
   mode: "manual",
@@ -9,7 +10,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   endChanceMin: 3,
   endDeltaMin: -5,
   endDeltaMax: 10,
-  overlayPort: 17554,
+  overlayPort: DEFAULT_OVERLAY_PORT,
   updateChannel: "latest",
   sunriseEnabled: false,
   sunriseLatitude: null,

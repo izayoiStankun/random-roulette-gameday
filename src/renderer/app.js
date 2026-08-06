@@ -3,6 +3,7 @@ let toastTimer;
 let currentTab = "games";
 let updateStatus;
 let lastCueId;
+let chzzkRedirectUri;
 const selectedGameIds = new Set();
 
 const $ = (selector) => document.querySelector(selector);
@@ -229,7 +230,7 @@ function populateSettings() {
   $("#add-suffix").value = settings.addSuffix;
   $("#remove-prefix").value = settings.removePrefix;
   $("#donation-exclude").value = settings.donationExcludeKeywords;
-  $("#redirect-uri").textContent = `http://127.0.0.1:${settings.overlayPort}/oauth/callback`;
+  $("#redirect-uri").textContent = chzzkRedirectUri || `http://127.0.0.1:${settings.overlayPort}/oauth/callback`;
   $("#overlay-uri").textContent = `http://127.0.0.1:${settings.overlayPort}/overlay/`;
 }
 
@@ -519,6 +520,8 @@ async function initialize() {
   bindEvents();
   render(await window.roulette.getState());
   const summary = await window.roulette.getSecretsSummary();
+  chzzkRedirectUri = summary.chzzkRedirectUri;
+  if (chzzkRedirectUri) $("#redirect-uri").textContent = chzzkRedirectUri;
   $("#client-id").value = summary.clientId;
   $("#chzzk-reconnect").disabled = !summary.hasCredentials;
   if (summary.steamProfile) $("#steam-profile").value = summary.steamProfile;

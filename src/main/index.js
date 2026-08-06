@@ -13,8 +13,11 @@ const { UpdateService } = require("./update-service");
 const { isValidLocation } = require("./sunrise");
 const { getWindowsLocation } = require("./windows-location");
 const { createGameBackup, parseGameBackup } = require("./game-backup");
+const { resolveChzzkRedirectUri } = require("./app-config");
 
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) app.quit();
 
 let mainWindow;
 let store;
@@ -29,6 +32,14 @@ let updateCheckTimer;
 let tickInterval;
 let sunriseInterval;
 let spinInFlight = false;
+const chzzkRedirectUri = resolveChzzkRedirectUri();
+
+app.on("second-instance", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+});
 
 function sendState(state = engine.snapshot()) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("state", state);
@@ -116,7 +127,8 @@ function installIpcHandlers() {
       clientId: secrets.clientId || "",
       hasSteamApiKey: Boolean(secrets.steamApiKey),
       steamProfile: secrets.steamProfile || "",
-      hasWheelOfNamesApiKey: Boolean(secrets.wheelOfNamesApiKey)
+      hasWheelOfNamesApiKey: Boolean(secrets.wheelOfNamesApiKey),
+      chzzkRedirectUri
     };
   });
   ipcMain.handle("chzzk:authorize", (_event, credentials) => {
@@ -282,6 +294,7 @@ function installIpcHandlers() {
 }
 
 app.whenReady().then(async () => {
+  if (!hasSingleInstanceLock) return;
   store = new JsonStore(app.getPath("userData"));
   const savedState = store.readState();
   const savedSecrets = store.readSecrets();
@@ -310,7 +323,7 @@ app.whenReady().then(async () => {
   });
   await overlayServer.start();
   chzzk = new ChzzkClient({
-    redirectUri: `http://127.0.0.1:${engine.settings.overlayPort}/oauth/callback`,
+    redirectUri: chzzkRedirectUri,
     openExternal: (url) => shell.openExternal(url)
   });
 
