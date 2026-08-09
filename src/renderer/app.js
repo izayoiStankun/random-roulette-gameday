@@ -568,6 +568,12 @@ async function initialize() {
       ? "Wheel of Names 사용 준비됨"
       : "API 키 저장됨 · 현재 로컬 룰렛";
   }
+  if (!summary.wheelOfNamesEnabled) {
+    $("#wheel-provider-status").textContent = "OBS 호환성 확인 전까지 로컬 룰렛을 사용합니다.";
+    document.querySelector('[data-wheel-provider="wheelofnames"]').disabled = true;
+    $("#wheel-api-key").disabled = true;
+    $("#wheel-api-form button").disabled = true;
+  }
   window.roulette.onState(render);
   window.roulette.onChzzkStatus(updateChzzkStatus);
   renderUpdateStatus(await window.roulette.getUpdateStatus());

@@ -2,6 +2,7 @@ const { EventEmitter } = require("node:events");
 const { randomBytes, randomInt } = require("node:crypto");
 const { getSunriseStatus, isValidLocation } = require("./sunrise");
 const { DEFAULT_OVERLAY_PORT } = require("./app-config");
+const { WHEEL_OF_NAMES_ENABLED } = require("./features");
 
 const DEFAULT_SETTINGS = Object.freeze({
   mode: "manual",
@@ -47,6 +48,7 @@ class RouletteEngine extends EventEmitter {
     super();
     this.random = random;
     this.settings = { ...DEFAULT_SETTINGS, ...(snapshot.settings || {}) };
+    if (!WHEEL_OF_NAMES_ENABLED) this.settings.wheelProvider = "local";
     this.games = Array.isArray(snapshot.games) ? snapshot.games : [];
     this.queue = Array.isArray(snapshot.queue) ? snapshot.queue : [];
     this.history = Array.isArray(snapshot.history) ? snapshot.history.slice(0, 100) : [];
@@ -113,7 +115,9 @@ class RouletteEngine extends EventEmitter {
       ? next.soundOutput
       : "app";
     next.soundVolume = clamp(Number(next.soundVolume) || 0, 0, 100);
-    next.wheelProvider = next.wheelProvider === "wheelofnames" ? "wheelofnames" : "local";
+    next.wheelProvider = WHEEL_OF_NAMES_ENABLED && next.wheelProvider === "wheelofnames"
+      ? "wheelofnames"
+      : "local";
     next.removeWinnerAfterSpin = Boolean(next.removeWinnerAfterSpin);
     next.donationExcludeKeywords = String(next.donationExcludeKeywords || "").trim();
     const latitude = Number(next.sunriseLatitude);

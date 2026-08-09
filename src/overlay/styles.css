@@ -14,7 +14,7 @@ html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background:
   background: radial-gradient(circle, #071620dd 0, #05090fd9 53%, #02040788 100%);
   transition: opacity .45s;
 }
-.wheel-wrap { width: min(72vh, 760px); aspect-ratio: 1; position: relative; filter: drop-shadow(0 26px 70px #000b); }
+.wheel-wrap { width: min(72vh, 760px); aspect-ratio: 1; position: relative; transform: translateX(-190px); filter: drop-shadow(0 26px 70px #000b); }
 #wheel {
   display: block; width: 100%; height: 100%; border-radius: 50%;
   border: 9px solid #f1f7f8; background: #132130;
@@ -34,7 +34,28 @@ html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background:
 .round-label { position: absolute; left: 110px; top: 92px; display: flex; flex-direction: column; }
 .round-label span, .chance-callout { font: 800 17px ui-monospace, monospace; letter-spacing: .18em; color: var(--mint); }
 .round-label strong { font: 900 92px/1 ui-monospace, monospace; }
-.chance-callout { position: absolute; right: 100px; bottom: 100px; padding: 16px 22px; border: 1px solid #29f2bd88; background: #07151dcc; }
+.chance-callout { position: absolute; left: 110px; bottom: 92px; padding: 16px 22px; border: 1px solid #29f2bd88; background: #07151dcc; }
+
+.spin-roster {
+  position: absolute; right: 74px; top: 50%; width: 450px; max-height: 790px; transform: translateY(-50%);
+  padding: 26px 26px 22px; background: linear-gradient(145deg, #071018f2, #0c1a24e8);
+  border: 1px solid #294352; border-top: 5px solid var(--mint); box-shadow: 0 22px 70px #0009;
+}
+.spin-roster-heading { display: grid; grid-template-columns: 1fr auto; align-items: end; padding-bottom: 17px; border-bottom: 1px solid #294352; }
+.spin-roster-heading span { grid-column: 1 / -1; color: var(--mint); font: 800 14px ui-monospace, monospace; letter-spacing: .18em; }
+.spin-roster-heading strong { margin-top: 6px; font-size: 31px; }
+.spin-roster-heading small { color: #9cb4c1; font-size: 16px; }
+.spin-roster-list { display: grid; gap: 7px; padding-top: 13px; }
+.spin-roster-item { display: grid; grid-template-columns: 15px minmax(0, 1fr) auto; gap: 13px; align-items: center; min-height: 48px; padding: 8px 11px; background: #ffffff09; }
+.spin-roster-item i { width: 13px; height: 30px; border-radius: 4px; }
+.spin-roster-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; text-shadow: 0 2px 8px #000; }
+.spin-roster-item small { color: #b6cbd5; font: 800 15px ui-monospace, monospace; white-space: nowrap; }
+.spin-roster-item.end { background: #4c1522bb; }
+.spin-roster-item.end strong, .spin-roster-item.end small { color: #ff8997; }
+.spin-roster-more { min-height: 18px; padding-top: 11px; color: #8ba2ae; text-align: center; font-size: 14px; }
+.spin-roster.dense .spin-roster-item { min-height: 39px; padding-block: 5px; }
+.spin-roster.dense .spin-roster-item strong { font-size: 18px; }
+.spin-roster.dense .spin-roster-item small { font-size: 13px; }
 
 .game-hud { position: absolute; inset: 0; transition: opacity .4s; }
 .game-info {

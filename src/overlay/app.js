@@ -2,6 +2,8 @@ const canvas = document.querySelector("#wheel");
 const context = canvas.getContext("2d");
 const localWheelDecorations = document.querySelectorAll(".local-wheel-decoration");
 const wheelScene = document.querySelector("#wheel-scene");
+const spinRoster = document.querySelector(".spin-roster");
+const spinRosterList = document.querySelector("#spin-roster-list");
 const gameHud = document.querySelector("#game-hud");
 const endScene = document.querySelector("#end-scene");
 const donationPop = document.querySelector("#donation-pop");
@@ -95,16 +97,44 @@ function drawWheel(slices) {
       context.rotate(cursor + angle / 2);
       context.textAlign = "right";
       context.fillStyle = "white";
-      context.font = `800 ${angle > .2 ? 21 : 15}px Pretendard, sans-serif`;
+      const fontSize = angle > .35 ? 36 : angle > .16 ? 28 : 21;
+      context.font = `900 ${fontSize}px Pretendard, sans-serif`;
       context.shadowColor = "#000b";
-      context.shadowBlur = 5;
-      const maxChars = angle > .2 ? 22 : 12;
+      context.shadowBlur = 7;
+      context.lineWidth = 7;
+      context.strokeStyle = "#071018cc";
+      const maxChars = angle > .35 ? 18 : angle > .16 ? 13 : 9;
       const label = slice.name.length > maxChars ? `${slice.name.slice(0, maxChars - 1)}…` : slice.name;
-      context.fillText(label, radius - 28, 7);
+      context.strokeText(label, radius - 35, fontSize * .28);
+      context.fillText(label, radius - 35, fontSize * .28);
       context.restore();
     }
     cursor += angle;
   });
+}
+
+function renderSpinRoster(spin) {
+  const slices = buildSlices(spin);
+  const visible = slices.slice(0, 12);
+  spinRoster.classList.toggle("dense", visible.length > 8);
+  document.querySelector("#spin-roster-summary").textContent = `${slices.length}개 항목`;
+  spinRosterList.replaceChildren();
+  visible.forEach((slice) => {
+    const row = document.createElement("div");
+    row.className = `spin-roster-item${slice.type === "end" ? " end" : ""}`;
+    const swatch = document.createElement("i");
+    swatch.style.background = slice.color;
+    const name = document.createElement("strong");
+    name.textContent = slice.name;
+    const meta = document.createElement("small");
+    const percent = slice.weight * 100;
+    meta.textContent = `${percent < 1 && percent > 0 ? percent.toFixed(2) : percent.toFixed(1)}%`;
+    row.append(swatch, name, meta);
+    spinRosterList.append(row);
+  });
+  document.querySelector("#spin-roster-more").textContent = slices.length > visible.length
+    ? `외 ${slices.length - visible.length}개 항목`
+    : "";
 }
 
 function spinWheel(spin) {
@@ -233,6 +263,7 @@ function render(nextState) {
   renderSunrise(state.sunrise);
 
   if (showWheel) {
+    renderSpinRoster(state.spin);
     document.querySelector("#wheel-round").textContent = state.spin.round;
     document.querySelector("#chance-callout").textContent = state.spin.chanceUsed
       ? `방종 확률 ${state.spin.chanceUsed}%`

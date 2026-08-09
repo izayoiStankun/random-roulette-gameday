@@ -14,6 +14,7 @@ const { isValidLocation } = require("./sunrise");
 const { getWindowsLocation } = require("./windows-location");
 const { createGameBackup, parseGameBackup } = require("./game-backup");
 const { resolveChzzkRedirectUri } = require("./app-config");
+const { WHEEL_OF_NAMES_ENABLED } = require("./features");
 
 const ALLOWED_OVERLAY_QUERIES = new Set([
   "",
@@ -79,7 +80,7 @@ async function beginConfiguredSpin() {
   if (spinInFlight) throw new Error("룰렛 결과를 이미 생성하고 있습니다.");
   spinInFlight = true;
   try {
-    if (engine.settings.wheelProvider !== "wheelofnames") {
+    if (!WHEEL_OF_NAMES_ENABLED || engine.settings.wheelProvider !== "wheelofnames") {
       return engine.beginSpin({ provider: "local" });
     }
     const context = engine.prepareSpin();
@@ -147,6 +148,7 @@ function installIpcHandlers() {
       hasSteamApiKey: Boolean(secrets.steamApiKey),
       steamProfile: secrets.steamProfile || "",
       hasWheelOfNamesApiKey: Boolean(secrets.wheelOfNamesApiKey),
+      wheelOfNamesEnabled: WHEEL_OF_NAMES_ENABLED,
       chzzkRedirectUri
     };
   });
@@ -255,7 +257,9 @@ function installIpcHandlers() {
       case "wheel:settings": {
         const secrets = store.readSecrets();
         const apiKey = String(payload?.apiKey || secrets.wheelOfNamesApiKey || "").trim();
-        const provider = payload?.provider === "wheelofnames" ? "wheelofnames" : "local";
+        const provider = WHEEL_OF_NAMES_ENABLED && payload?.provider === "wheelofnames"
+          ? "wheelofnames"
+          : "local";
         if (provider === "wheelofnames" && !apiKey) {
           throw new Error("Wheel of Names API 키를 먼저 입력해 주세요.");
         }
