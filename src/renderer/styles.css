@@ -62,6 +62,19 @@ main { max-width: 1420px; margin: 0 auto; padding: 26px 34px 60px; }
 
 .toolbar { padding: 15px; display: flex; justify-content: space-between; gap: 10px; }
 .toolbar form, .toolbar-actions { display: flex; gap: 8px; }
+.steam-web-panel { overflow: hidden; }
+.steam-web-panel summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 15px 18px; cursor: pointer; list-style: none; }
+.steam-web-panel summary::-webkit-details-marker { display: none; }
+.steam-web-panel summary::after { content: "열기"; color: var(--accent); font-size: 11px; font-weight: 700; }
+.steam-web-panel[open] summary::after { content: "닫기"; }
+.steam-web-panel summary > span:first-child { display: grid; gap: 4px; }
+.steam-web-panel summary small { color: var(--muted); font-size: 11px; font-weight: 400; }
+.steam-web-panel[open] summary { border-bottom: 1px solid var(--line); }
+.steam-web-form { display: grid; grid-template-columns: minmax(280px, 1.25fr) minmax(230px, 1fr) auto; gap: 10px; align-items: end; padding: 16px 18px 10px; }
+.steam-web-help { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 0 18px 16px; }
+.steam-web-help p { color: var(--muted); font-size: 11px; line-height: 1.6; }
+.steam-web-help > div { display: flex; flex: none; gap: 7px; }
+.steam-web-help .button { padding: 7px 9px; font-size: 11px; }
 input {
   min-width: 0; color: var(--text); background: #0b1119; border: 1px solid #2a3748;
   padding: 10px 11px; border-radius: 7px; outline: none;
@@ -83,8 +96,14 @@ td.game-name { font-weight: 700; }
 .icon-button { background: none; border: 0; color: var(--muted); padding: 5px; }
 .icon-button:hover { color: var(--danger); }
 
-.donation-test { padding: 20px 22px; display: grid; grid-template-columns: 260px 1fr; align-items: end; gap: 20px; }
+.donation-test { padding: 20px 22px; display: grid; gap: 14px; }
+.donation-test-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; }
 .donation-test form { display: grid; grid-template-columns: 150px 120px 1fr auto; gap: 8px; }
+.donation-examples { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding-top: 2px; }
+.donation-examples > span { margin-right: 2px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.donation-examples > small { color: var(--muted); font-size: 11px; }
+.example-chip { padding: 6px 9px; border: 1px solid #304157; border-radius: 20px; background: #101a25; color: #b9ddea; font-size: 11px; }
+.example-chip:hover { border-color: var(--accent); color: var(--accent); }
 .queue-list, .history-list { min-height: 240px; padding: 12px; display: grid; align-content: start; gap: 8px; }
 .queue-item { padding: 14px; border: 1px solid var(--line); border-radius: 10px; display: grid; grid-template-columns: 1fr auto; gap: 10px; background: #0d141c; }
 .queue-item.resolved { opacity: .5; }
@@ -92,18 +111,73 @@ td.game-name { font-weight: 700; }
 .queue-actions { display: flex; gap: 6px; align-items: center; }
 .queue-actions input { width: 230px; }
 .empty { min-height: 160px; display: grid; place-items: center; color: var(--muted); }
+.compact-empty { min-height: 96px; }
+.queue-history-panel { overflow: hidden; }
+.queue-history-panel summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 17px 21px; cursor: pointer; list-style: none; }
+.queue-history-panel summary::-webkit-details-marker { display: none; }
+.queue-history-panel summary > span:first-child { display: grid; gap: 4px; }
+.queue-history-panel summary small { color: var(--muted); font-size: 11px; font-weight: 400; }
+.queue-history-panel[open] summary { border-bottom: 1px solid var(--line); }
+.resolved-history { min-height: 0; max-height: 340px; overflow: auto; }
+.resolved-history .queue-item { grid-template-columns: 1fr; }
 
 .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; }
 .settings-grid > .panel { padding: 24px; }
 .segmented { display: grid; grid-template-columns: 1fr 1fr; background: #0a1017; padding: 4px; border-radius: 10px; margin-top: 15px; }
-.mode-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
-.mode-button.active { background: #1d2b39; color: var(--accent); }
+.mode-button, .update-channel-button, .sunrise-mode-button, .preview-mode-button, .sound-output-button, .wheel-provider-button, .remove-winner-button { border: 0; border-radius: 7px; padding: 11px; background: transparent; color: var(--muted); font-weight: 700; }
+.mode-button.active, .update-channel-button.active, .sunrise-mode-button.active, .preview-mode-button.active, .sound-output-button.active, .wheel-provider-button.active, .remove-winner-button.active { background: #1d2b39; color: var(--accent); }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 21px; }
 label { display: grid; gap: 6px; color: #b5bfca; font-size: 12px; }
 .wide { grid-column: 1 / -1; }
 .stack-form { display: grid; gap: 12px; margin: 18px 0; }
 code { display: block; padding: 11px; background: #090f16; border: 1px solid #273342; color: var(--accent); border-radius: 7px; overflow-wrap: anywhere; margin: 12px 0; }
+.obs-source-details { margin: 16px 0 20px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #0b1119; }
+.obs-source-details > summary { padding: 13px 14px; cursor: pointer; font-size: 13px; font-weight: 800; }
+.obs-source-details[open] > summary { border-bottom: 1px solid var(--line); }
+.obs-source-details > .help { padding: 0 14px; margin-top: 12px; }
+.obs-source-list { display: grid; gap: 7px; padding: 12px 14px; }
+.obs-source-row { display: grid; grid-template-columns: minmax(100px, 130px) 1fr auto; gap: 8px; align-items: center; }
+.obs-source-row > div { display: grid; gap: 3px; }
+.obs-source-row strong { font-size: 12px; }
+.obs-source-row small { color: var(--muted); font-size: 10px; }
+.obs-source-row code { margin: 0; padding: 8px 9px; font-size: 10px; }
+.obs-source-actions { display: flex; gap: 5px; }
+.obs-source-actions .button { padding: 8px 9px; font-size: 10px; }
+.obs-scene-guide { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 13px; }
+.obs-scene-guide strong, .obs-scene-guide span { padding: 6px 8px; border-radius: 6px; background: #14202b; font-size: 10px; }
+.obs-scene-guide strong { color: var(--accent); }
+.obs-source-details .privacy-note { margin: 0 14px 14px; }
 hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
+.update-panel { grid-column: 1 / -1; }
+.update-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.update-status-box { display: grid; gap: 10px; margin: 16px 0; padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: #0b1119; font-size: 13px; }
+.update-status-box progress { width: 100%; accent-color: var(--accent); }
+.update-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.broadcast-options { grid-column: 1 / -1; }
+.option-setting { display: grid; grid-template-columns: 1fr 220px; align-items: center; gap: 20px; }
+.option-setting > div > strong { font-size: 14px; }
+.segmented.compact { margin: 0; }
+.sound-controls { display: grid; gap: 11px; }
+.sound-setting { grid-template-columns: 1fr 300px; }
+.sound-output-segmented { grid-template-columns: repeat(4, 1fr); }
+.sound-output-button { padding: 9px 7px; font-size: 12px; }
+.volume-control { grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; }
+.volume-control output { justify-self: end; color: var(--accent); font: 700 12px ui-monospace, monospace; }
+.volume-control input { grid-column: 1 / -1; width: 100%; padding: 0; accent-color: var(--accent); }
+.sound-test-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.sound-test-actions .button { padding-inline: 8px; font-size: 11px; white-space: nowrap; }
+.privacy-note { margin: 14px 0 0; padding: 11px 13px; border-radius: 8px; background: #12222a; color: #9bc5d4; font-size: 12px; line-height: 1.6; }
+.wheel-api-form { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 9px; margin-top: 13px; }
+.probability-cell { width: 130px; display: grid; grid-template-columns: 48px 1fr; gap: 8px; align-items: center; color: #b9ddea; font: 700 11px ui-monospace, monospace; }
+.probability-cell > i { display: block; height: 5px; border-radius: 5px; background: #263543; overflow: hidden; }
+.probability-cell > i::after { content: ""; display: block; width: var(--probability); height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+.list-footer { display: flex; justify-content: space-between; gap: 12px; padding: 13px 16px; border-top: 1px solid var(--line); background: #0d141d; }
+.list-footer-group { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+#selected-game-count { color: var(--muted); font-size: 12px; }
+.game-select { accent-color: var(--accent-2); }
+.end-probability-row td { background: #2b1017; border-top-color: #66303a; }
+.end-probability-row .game-name { color: #ff8997; }
+.end-probability-row small { display: block; margin-top: 3px; color: #bd7a84; font-size: 10px; }
 .history-item { display: grid; grid-template-columns: 80px 1fr 180px; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); padding: 12px; font-size: 13px; }
 .history-item strong.end { color: var(--danger); }
 
@@ -116,4 +190,17 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
   .primary-actions { grid-column: 1 / -1; flex-direction: row !important; border-top: 1px solid var(--line); }
   .settings-grid { grid-template-columns: 1fr; }
   .donation-test { grid-template-columns: 1fr; }
+  .donation-test form { grid-template-columns: 1fr 120px; }
+  #sim-text { grid-column: 1 / -1; }
+  .donation-test form .button { grid-column: 1 / -1; }
+  .option-setting { grid-template-columns: 1fr; }
+  .sound-setting { grid-template-columns: 1fr; }
+  .list-footer { align-items: stretch; flex-direction: column; }
+  .toolbar { flex-direction: column; }
+  .toolbar-actions { flex-wrap: wrap; }
+  .steam-web-form { grid-template-columns: 1fr 1fr; }
+  .steam-web-form .button { grid-column: 1 / -1; }
+  .steam-web-help { align-items: flex-start; flex-direction: column; }
+  .obs-source-row { grid-template-columns: 1fr auto; }
+  .obs-source-row > div { grid-column: 1 / -1; }
 }

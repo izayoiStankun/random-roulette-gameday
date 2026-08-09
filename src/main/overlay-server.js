@@ -7,6 +7,7 @@ const CONTENT_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".mp3": "audio/mpeg",
   ".png": "image/png",
   ".svg": "image/svg+xml"
 };
@@ -19,6 +20,7 @@ class OverlayServer extends EventEmitter {
     this.getState = getState;
     this.clients = new Set();
     this.server = null;
+    this.wheelAnimation = null;
   }
 
   start() {
@@ -57,6 +59,24 @@ class OverlayServer extends EventEmitter {
       return;
     }
 
+    if (url.pathname.startsWith("/wheel-animation/")) {
+      const expectedPath = this.wheelAnimation
+        ? `/wheel-animation/${this.wheelAnimation.version}.${this.wheelAnimation.extension}`
+        : null;
+      if (!expectedPath || url.pathname !== expectedPath) {
+        response.writeHead(404);
+        response.end("Not found");
+        return;
+      }
+      response.writeHead(200, {
+        "Content-Type": this.wheelAnimation.contentType,
+        "Content-Length": this.wheelAnimation.data.length,
+        "Cache-Control": "no-store"
+      });
+      response.end(this.wheelAnimation.data);
+      return;
+    }
+
     if (url.pathname === "/oauth/callback") {
       const code = url.searchParams.get("code");
       const state = url.searchParams.get("state");
@@ -83,7 +103,8 @@ class OverlayServer extends EventEmitter {
     const extension = path.extname(filePath).toLowerCase();
     response.writeHead(200, {
       "Content-Type": CONTENT_TYPES[extension] || "application/octet-stream",
-      "Cache-Control": "no-cache"
+      "Cache-Control": "no-store, max-age=0",
+      "Pragma": "no-cache"
     });
     fs.createReadStream(filePath).pipe(response);
   }
@@ -97,6 +118,19 @@ class OverlayServer extends EventEmitter {
         this.clients.delete(response);
       }
     }
+  }
+
+  setWheelAnimation({ version, data, contentType, extension }) {
+    const cleanExtension = String(extension || "gif").toLowerCase();
+    if (!new Set(["gif", "webp"]).has(cleanExtension)) {
+      throw new Error("지원하지 않는 룰렛 애니메이션 형식입니다.");
+    }
+    this.wheelAnimation = {
+      version: String(version),
+      data: Buffer.from(data),
+      contentType: contentType || `image/${cleanExtension}`,
+      extension: cleanExtension
+    };
   }
 
   close() {

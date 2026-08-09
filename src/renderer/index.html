@@ -55,46 +55,96 @@
           <button class="button" type="submit">직접 추가</button>
         </form>
         <div class="toolbar-actions">
-          <button id="steam-scan" class="button">설치된 Steam 게임 불러오기</button>
+          <button id="steam-scan" class="button">이 PC의 설치 게임 불러오기</button>
           <button id="overlay-open" class="button subtle">OBS 화면 미리보기</button>
         </div>
       </div>
+      <details class="panel steam-web-panel">
+        <summary>
+          <span><strong>다른 PC의 Steam 보유 게임 불러오기</strong><small>Steam 웹 연동 · 게임 PC에 앱 설치 불필요</small></span>
+          <span id="steam-web-status" class="status-pill">설정 안 됨</span>
+        </summary>
+        <form id="steam-web-form" class="steam-web-form">
+          <label>Steam 프로필 주소 또는 SteamID64
+            <input id="steam-profile" value="https://steamcommunity.com/profiles/76561198305422127" placeholder="https://steamcommunity.com/profiles/..."></label>
+          <label>Steam Web API 키
+            <input id="steam-api-key" type="password" autocomplete="off" placeholder="발급받은 키 입력"></label>
+          <button id="steam-web-import" class="button accent" type="submit">웹 보유 목록 불러오기</button>
+        </form>
+        <div class="steam-web-help">
+          <p>웹에서는 보유 여부만 확인합니다. 게임 PC의 실제 설치 여부는 확인할 수 없습니다. Steam 프로필의 <strong>게임 세부 정보</strong>가 공개여야 합니다.</p>
+          <div>
+            <button id="steam-key-page" class="button subtle" type="button">API 키 발급 페이지</button>
+            <button id="steam-privacy-page" class="button subtle" type="button">Steam 공개 설정</button>
+          </div>
+        </div>
+      </details>
       <div class="panel table-panel">
         <div class="table-heading">
           <div>
-            <h2>룰렛 게임</h2>
+            <h2>룰렛 목록</h2>
             <p id="game-summary">0개 · 총 0칸</p>
           </div>
           <input id="game-filter" class="filter" placeholder="게임 검색">
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>사용</th><th>게임</th><th>칸 수</th><th>보유 상태</th><th></th></tr></thead>
+            <thead><tr><th>선택</th><th>사용</th><th>게임</th><th>칸 수</th><th>전체 확률</th><th>보유 상태</th><th></th></tr></thead>
             <tbody id="game-list"></tbody>
           </table>
+        </div>
+        <div class="list-footer">
+          <div class="list-footer-group">
+            <button id="select-all-games" class="button subtle">전체 선택</button>
+            <button id="delete-selected-games" class="button danger" disabled>선택한 목록 삭제</button>
+            <span id="selected-game-count">0개 선택</span>
+          </div>
+          <div class="list-footer-group">
+            <button id="backup-games" class="button subtle">리스트 백업</button>
+            <button id="restore-games" class="button subtle">백업 불러오기</button>
+            <button id="clear-games" class="button danger">전체 리스트 초기화</button>
+          </div>
         </div>
       </div>
     </section>
 
     <section id="tab-donations" class="tab-page">
       <div class="panel donation-test">
-        <div>
+        <div class="donation-test-heading">
+          <div>
           <h2>후원 수신 테스트</h2>
-          <p>실제 결제 없이 명령 인식과 자동/수동 동작을 확인합니다.</p>
+            <p>실제 결제 없이 일반 게임명과 명령 인식, 자동/수동 동작을 확인합니다.</p>
+          </div>
+          <span class="status-pill">테스트 전용</span>
         </div>
         <form id="simulate-form">
           <input id="sim-donor" value="테스트시청자" placeholder="닉네임">
           <input id="sim-amount" type="number" value="1000" min="1" placeholder="금액">
-          <input id="sim-text" value="게임명 추가요" placeholder="후원 메시지">
+          <input id="sim-text" placeholder="게임 이름 또는 후원 명령을 자유롭게 입력">
           <button class="button" type="submit">가상 후원</button>
         </form>
+        <div class="donation-examples" aria-label="후원 메시지 예시">
+          <span>입력 예시</span>
+          <button class="example-chip" type="button" data-donation-example="게임 이름">게임 이름</button>
+          <button class="example-chip" type="button" data-donation-example="!게임추가 게임 이름">!게임추가 게임 이름</button>
+          <button class="example-chip" type="button" data-donation-example="게임 이름 추가요">게임 이름 추가요</button>
+          <button class="example-chip" type="button" data-donation-example="!게임빼기 게임 이름">!게임빼기 게임 이름</button>
+          <small>명령 없이 입력하면 메시지 전체를 게임 이름으로 처리합니다.</small>
+        </div>
       </div>
       <div class="panel">
         <div class="table-heading">
-          <div><h2>승인 대기열</h2><p>자동 모드에서도 미등록 게임은 이곳에서 확인합니다.</p></div>
+          <div><h2>승인 대기열</h2><p id="pending-queue-summary">수동 모드 요청과 자동으로 처리할 수 없는 제거 요청을 이곳에서 확인합니다.</p></div>
         </div>
         <div id="queue-list" class="queue-list"></div>
       </div>
+      <details class="panel queue-history-panel">
+        <summary>
+          <span><strong>처리 기록</strong><small>승인·거절이 끝난 요청</small></span>
+          <span id="resolved-queue-count" class="status-pill">0개</span>
+        </summary>
+        <div id="queue-history" class="queue-list resolved-history"></div>
+      </details>
     </section>
 
     <section id="tab-settings" class="tab-page settings-grid">
@@ -104,7 +154,7 @@
           <button data-mode="manual" class="mode-button active">수동 모드</button>
           <button data-mode="auto" class="mode-button">자동 모드</button>
         </div>
-        <p class="help">수동은 모든 후원 요청을 승인 대기시킵니다. 자동은 이미 확인된 게임의 요청을 즉시 반영하고, 타이머 종료 후 다음 룰렛을 자동 실행합니다.</p>
+        <p class="help">수동은 모든 후원 요청을 승인 대기시킵니다. 자동은 보유 여부와 관계없이 유효한 게임 추가 요청을 즉시 반영하고, 타이머 종료 후 다음 룰렛을 자동 실행합니다. 목록에 없는 게임 제거 요청만 승인 대기합니다.</p>
         <form id="rules-form" class="form-grid">
           <label>게임 시간(분)<input id="round-minutes" type="number" min="1" max="1440"></label>
           <label>방종 시작 확률(%)<input id="end-start" type="number" min="0" max="100"></label>
@@ -114,6 +164,7 @@
           <label>추가 명령 접두사<input id="add-prefix"></label>
           <label>추가 명령 접미사<input id="add-suffix"></label>
           <label>제거 명령 접두사<input id="remove-prefix"></label>
+          <label class="wide">룰렛 제외 문구 (쉼표로 구분)<input id="donation-exclude" placeholder="예: 룰렛제외, 게임추가금지"></label>
           <button class="button accent wide" type="submit">규칙 저장</button>
         </form>
       </div>
@@ -131,8 +182,120 @@
         <hr>
         <h2>OBS Browser Source</h2>
         <code id="overlay-uri">http://127.0.0.1:17554/overlay/</code>
-        <p class="help">OBS 소스 → 브라우저에서 위 URL을 넣고 1920×1080으로 설정하세요. localhost 통신이라 외부 인터넷을 사용하지 않습니다.</p>
+        <p class="help">위 주소는 기존 통합 화면입니다. OBS 소스 → 브라우저에서 URL을 넣고 1920×1080으로 설정하세요. localhost 통신이라 외부 인터넷을 사용하지 않습니다.</p>
+        <details class="obs-source-details" open>
+          <summary>장면별로 배치하는 요소별 OBS 소스</summary>
+          <p class="help">필요한 요소를 각각 브라우저 소스로 추가하면 OBS 장면마다 위치·크기·표시 여부를 따로 조절할 수 있습니다.</p>
+          <div id="obs-source-list" class="obs-source-list"></div>
+          <div class="obs-scene-guide">
+            <strong>권장 구성</strong>
+            <span>대기: 목록·후원·일출</span>
+            <span>룰렛: 룰렛·후원</span>
+            <span>게임: 게임 HUD·후원·일출</span>
+            <span>종료: 방종 결과</span>
+          </div>
+          <p class="privacy-note"><strong>알림음 전용</strong> 소스는 한 번만 만든 뒤 다른 장면에서는 OBS의 <strong>기존 항목 추가</strong>로 재사용하세요. 새 브라우저 소스를 여러 개 만들면 소리가 겹칠 수 있습니다. 다른 개별 소스는 소리를 재생하지 않습니다.</p>
+        </details>
         <button id="reset-event" class="button danger">회차·타이머·기록 초기화</button>
+      </div>
+
+      <div class="panel update-panel">
+        <div class="update-heading">
+          <div>
+            <h2>앱 업데이트</h2>
+            <p id="update-version" class="help">현재 버전을 확인하는 중입니다.</p>
+          </div>
+          <span id="update-kind" class="status-pill">확인 중</span>
+        </div>
+        <p class="help">시작할 때 새 버전 유무만 확인합니다. 다운로드와 설치는 방송 운영자가 직접 눌러야 진행됩니다.</p>
+        <div class="segmented">
+          <button data-update-channel="latest" class="update-channel-button active">정식판만</button>
+          <button data-update-channel="beta" class="update-channel-button">테스트판 포함</button>
+        </div>
+        <div class="update-status-box">
+          <strong id="update-status">업데이트를 확인할 수 있습니다.</strong>
+          <progress id="update-progress" value="0" max="100" hidden></progress>
+        </div>
+        <div class="update-actions">
+          <button id="update-check" class="button">업데이트 확인</button>
+          <button id="update-download" class="button accent" disabled>다운로드</button>
+          <button id="update-install" class="button accent" disabled>설치 후 재시작</button>
+          <button id="update-open" class="button subtle">Release 페이지</button>
+        </div>
+      </div>
+
+      <div class="panel broadcast-options">
+        <h2>OBS 표시 옵션</h2>
+        <div class="option-setting wheel-provider-setting">
+          <div>
+            <strong>룰렛 방식</strong>
+            <p id="wheel-provider-status" class="help">OBS 호환성 확인 전까지 로컬 룰렛을 사용합니다.</p>
+          </div>
+          <div class="segmented compact">
+            <button data-wheel-provider="local" class="wheel-provider-button active">로컬</button>
+            <button data-wheel-provider="wheelofnames" class="wheel-provider-button" disabled>Wheel of Names (보류)</button>
+          </div>
+        </div>
+        <form id="wheel-api-form" class="wheel-api-form">
+          <label>Wheel of Names API 키<input id="wheel-api-key" type="password" autocomplete="off" placeholder="OBS 호환성 확인 전까지 보류" disabled></label>
+          <button class="button accent" type="submit" disabled>현재 사용 중지</button>
+        </form>
+        <p class="privacy-note">저장된 API 키는 유지합니다. Wheel of Names는 OBS 브라우저에서 빈 화면이 발생해 정식판에서 잠시 비활성화했으며, 호환성 확인 후 다시 제공합니다.</p>
+        <hr>
+        <div class="option-setting">
+          <div>
+            <strong>당첨 게임 자동 삭제</strong>
+            <p class="help">ON이면 룰렛에 걸린 게임을 다음 라운드 목록에서 완전히 제거합니다.</p>
+          </div>
+          <div class="segmented compact">
+            <button data-remove-winner="off" class="remove-winner-button active">OFF</button>
+            <button data-remove-winner="on" class="remove-winner-button">ON</button>
+          </div>
+        </div>
+        <hr>
+        <div class="option-setting">
+          <div>
+            <strong>썬라이즈 카운트다운</strong>
+            <p id="sunrise-status" class="help">OFF · 위치를 사용하지 않습니다.</p>
+          </div>
+          <div class="segmented compact">
+            <button data-sunrise-mode="off" class="sunrise-mode-button active">OFF</button>
+            <button data-sunrise-mode="on" class="sunrise-mode-button">ON</button>
+          </div>
+        </div>
+        <p class="privacy-note">ON을 선택한 경우에만 현재 위치 권한을 요청합니다. 좌표는 약 1km 단위로 반올림한 뒤 Windows 보안 저장소에만 보관하며, OBS에는 일출 1시간 전부터 표시합니다.</p>
+        <hr>
+        <div class="option-setting">
+          <div>
+            <strong>다음 라운드 미리보기</strong>
+            <p class="help">대기 중에는 룰렛 목록을 표시하고, 진행 중에는 종료 2분 전부터 다시 표시합니다. 일시정지 중에는 표시하지 않습니다.</p>
+          </div>
+          <div class="segmented compact">
+            <button data-preview-mode="off" class="preview-mode-button">OFF</button>
+            <button data-preview-mode="on" class="preview-mode-button active">ON</button>
+          </div>
+        </div>
+        <hr>
+        <div class="option-setting sound-setting">
+          <div>
+            <strong>타이머 알림음</strong>
+            <p class="help">종료 4초 전에 카운트다운, 00:00에 종료 알람을 한 번 재생합니다. 조기 종료에는 울리지 않습니다.</p>
+          </div>
+          <div class="sound-controls">
+            <div class="segmented compact sound-output-segmented">
+              <button data-sound-output="off" class="sound-output-button">OFF</button>
+              <button data-sound-output="app" class="sound-output-button active">운영 앱</button>
+              <button data-sound-output="overlay" class="sound-output-button">OBS</button>
+              <button data-sound-output="both" class="sound-output-button">둘 다</button>
+            </div>
+            <label class="volume-control">볼륨 <output id="sound-volume-value">70%</output><input id="sound-volume" type="range" min="0" max="100" value="70"></label>
+            <div class="sound-test-actions">
+              <button id="test-countdown-sound" class="button subtle" type="button">카운트다운 테스트</button>
+              <button id="test-ended-sound" class="button subtle" type="button">종료 알람 테스트</button>
+            </div>
+          </div>
+        </div>
+        <p class="privacy-note">OBS 출력을 선택하면 브라우저 소스 속성에서 <strong>OBS를 통해 오디오 제어</strong>를 켜세요. <strong>둘 다</strong>는 데스크톱 오디오 캡처 환경에서 소리가 겹칠 수 있습니다.</p>
       </div>
     </section>
 

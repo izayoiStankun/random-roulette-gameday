@@ -1,6 +1,6 @@
 {
   "name": "roulette-broadcast",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "description": "치지직 후원과 OBS를 연동하는 랜덤 룰렛 게임데이 데스크톱 앱",
   "main": "src/main/index.js",
   "author": "Remilegi community",
@@ -8,15 +8,27 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
+    "build:overlay-vendor": "esbuild src/overlay/gif-canvas-player-source.js --bundle --format=iife --global-name=GifCanvas --minify --outfile=src/overlay/vendor/gif-canvas-player.js",
+    "qa:overlay": "electron tools/capture-overlay.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --win portable nsis --publish never"
   },
   "dependencies": {
-    "ws": "^8.18.3"
+    "electron-updater": "^6.8.9",
+    "semver": "^7.8.5",
+    "socket.io-client": "2.0.3",
+    "suncalc": "^2.0.1"
   },
   "devDependencies": {
-    "electron": "^37.2.3",
-    "electron-builder": "^26.0.12"
+    "electron": "39.8.10",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.28.2",
+    "gifuct-js": "^2.1.2"
+  },
+  "overrides": {
+    "engine.io-client": "3.5.6",
+    "socket.io-parser": "3.3.6",
+    "xmlhttprequest-ssl": "1.6.3"
   },
   "build": {
     "appId": "kr.remilegi.roulettebroadcast",
@@ -24,11 +36,21 @@
     "asar": true,
     "files": [
       "src/**/*",
-      "package.json"
+      "package.json",
+      "THIRD_PARTY_NOTICES.md"
     ],
     "directories": {
       "output": "release"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "izayoiStankun",
+        "repo": "random-roulette-gameday",
+        "channel": "latest"
+      }
+    ],
+    "generateUpdatesFilesForAllChannels": true,
     "win": {
       "target": [
         "portable",
@@ -36,10 +58,10 @@
       ]
     },
     "portable": {
-      "artifactName": "${productName}-${version}-${arch}-portable.${ext}"
+      "artifactName": "random-roulette-gameday-${version}-${arch}-portable.${ext}"
     },
     "nsis": {
-      "artifactName": "${productName}-${version}-${arch}-setup.${ext}",
+      "artifactName": "random-roulette-gameday-${version}-${arch}-setup.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true

@@ -1,5 +1,8 @@
 const { EventEmitter } = require("node:events");
 const { randomBytes, randomInt } = require("node:crypto");
+const { getSunriseStatus, isValidLocation } = require("./sunrise");
+const { DEFAULT_OVERLAY_PORT } = require("./app-config");
+const { WHEEL_OF_NAMES_ENABLED } = require("./features");
 
 const DEFAULT_SETTINGS = Object.freeze({
   mode: "manual",
@@ -8,7 +11,17 @@ const DEFAULT_SETTINGS = Object.freeze({
   endChanceMin: 3,
   endDeltaMin: -5,
   endDeltaMax: 10,
-  overlayPort: 17554,
+  overlayPort: DEFAULT_OVERLAY_PORT,
+  updateChannel: "latest",
+  sunriseEnabled: false,
+  sunriseLatitude: null,
+  sunriseLongitude: null,
+  nextRoundPreviewEnabled: true,
+  soundOutput: "app",
+  soundVolume: 70,
+  wheelProvider: "local",
+  removeWinnerAfterSpin: false,
+  donationExcludeKeywords: "",
   addPrefix: "!게임추가",
   addSuffix: "추가요",
   removePrefix: "!게임빼기"
@@ -35,6 +48,7 @@ class RouletteEngine extends EventEmitter {
     super();
     this.random = random;
     this.settings = { ...DEFAULT_SETTINGS, ...(snapshot.settings || {}) };
+    if (!WHEEL_OF_NAMES_ENABLED) this.settings.wheelProvider = "local";
     this.games = Array.isArray(snapshot.games) ? snapshot.games : [];
     this.queue = Array.isArray(snapshot.queue) ? snapshot.queue : [];
     this.history = Array.isArray(snapshot.history) ? snapshot.history.slice(0, 100) : [];
@@ -48,28 +62,43 @@ class RouletteEngine extends EventEmitter {
       endsAt: null
     };
     this.spin = null;
+    this.cue = null;
     this.lastDonation = null;
   }
 
   snapshot() {
+    const settings = { ...this.settings };
+    delete settings.sunriseLatitude;
+    delete settings.sunriseLongitude;
     return {
-      settings: this.settings,
+      settings,
       games: this.games,
       queue: this.queue,
       history: this.history,
       round: this.round,
       endChance: this.endChance,
+      probability: this.probabilitySnapshot(),
       status: this.status,
       currentGame: this.currentGame,
       timer: this.timer,
       spin: this.spin,
-      lastDonation: this.lastDonation
+      cue: this.cue,
+      lastDonation: this.lastDonation,
+      sunrise: getSunriseStatus(this.settings)
     };
+  }
+
+  probabilitySnapshot() {
+    const round = this.status === "spinning" && this.spin ? this.round : this.round + 1;
+    const endChance = this.status === "spinning" && this.spin
+      ? this.spin.chanceUsed
+      : round >= 4 ? clamp(this.endChance || this.settings.endChanceStart, 0, 100) : 0;
+    return { round, endChance, gamesChance: 100 - endChance };
   }
 
   persistentSnapshot() {
     const snapshot = this.snapshot();
-    return { ...snapshot, spin: null, lastDonation: null };
+    return { ...snapshot, spin: null, cue: null, lastDonation: null };
   }
 
   notify() {
@@ -79,6 +108,30 @@ class RouletteEngine extends EventEmitter {
   updateSettings(patch) {
     const next = { ...this.settings, ...patch };
     next.mode = next.mode === "auto" ? "auto" : "manual";
+    next.updateChannel = next.updateChannel === "beta" ? "beta" : "latest";
+    next.sunriseEnabled = Boolean(next.sunriseEnabled);
+    next.nextRoundPreviewEnabled = next.nextRoundPreviewEnabled !== false;
+    next.soundOutput = ["off", "app", "overlay", "both"].includes(next.soundOutput)
+      ? next.soundOutput
+      : "app";
+    next.soundVolume = clamp(Number(next.soundVolume) || 0, 0, 100);
+    next.wheelProvider = WHEEL_OF_NAMES_ENABLED && next.wheelProvider === "wheelofnames"
+      ? "wheelofnames"
+      : "local";
+    next.removeWinnerAfterSpin = Boolean(next.removeWinnerAfterSpin);
+    next.donationExcludeKeywords = String(next.donationExcludeKeywords || "").trim();
+    const latitude = Number(next.sunriseLatitude);
+    const longitude = Number(next.sunriseLongitude);
+    const hasLocation = next.sunriseLatitude !== null && next.sunriseLatitude !== "" &&
+      next.sunriseLongitude !== null && next.sunriseLongitude !== "";
+    if (next.sunriseEnabled && hasLocation && isValidLocation(latitude, longitude)) {
+      next.sunriseLatitude = latitude;
+      next.sunriseLongitude = longitude;
+    } else {
+      next.sunriseEnabled = false;
+      next.sunriseLatitude = null;
+      next.sunriseLongitude = null;
+    }
     next.roundDurationSec = clamp(Number(next.roundDurationSec) || 1800, 10, 86400);
     next.endChanceStart = clamp(Number(next.endChanceStart) || 5, 0, 100);
     next.endChanceMin = clamp(Number(next.endChanceMin) || 3, 0, 100);
@@ -170,6 +223,38 @@ class RouletteEngine extends EventEmitter {
     this.notify();
   }
 
+  removeGames(ids) {
+    const targets = new Set(Array.isArray(ids) ? ids : []);
+    const before = this.games.length;
+    this.games = this.games.filter((item) => !targets.has(item.id));
+    const removed = before - this.games.length;
+    if (removed > 0) this.notify();
+    return removed;
+  }
+
+  clearGames() {
+    const removed = this.games.length;
+    this.games = [];
+    if (removed > 0) this.notify();
+    return removed;
+  }
+
+  replaceGames(items) {
+    this.games = items.map((item) => ({
+      id: createId("game"),
+      name: normalizeName(item.name),
+      slots: clamp(Number(item.slots) || 1, 1, 10000),
+      enabled: item.enabled !== false,
+      installed: Boolean(item.installed),
+      owned: Boolean(item.owned || item.installed),
+      appId: item.appId || null,
+      source: item.source || "backup"
+    })).filter((item) => item.name);
+    this.games.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    this.notify();
+    return this.games.length;
+  }
+
   findGame(name) {
     const needle = normalizeName(name).toLocaleLowerCase("ko");
     return this.games.find((game) => game.name.toLocaleLowerCase("ko") === needle);
@@ -193,6 +278,9 @@ class RouletteEngine extends EventEmitter {
     } else if (addSuffix && text.endsWith(addSuffix)) {
       kind = "add";
       gameName = normalizeName(text.slice(0, -addSuffix.length));
+    } else if (text) {
+      kind = "add";
+      gameName = text;
     }
 
     if (!kind || !gameName) return null;
@@ -220,6 +308,16 @@ class RouletteEngine extends EventEmitter {
       text: normalizeName(donation.donationText),
       receivedAt: Date.now()
     };
+    const donationText = normalizeName(donation.donationText).toLocaleLowerCase("ko");
+    const excluded = this.settings.donationExcludeKeywords
+      .split(/[,\n]/)
+      .map((keyword) => normalizeName(keyword).toLocaleLowerCase("ko"))
+      .filter(Boolean)
+      .some((keyword) => donationText.includes(keyword));
+    if (excluded) {
+      this.notify();
+      return { action: "ignored", reason: "excluded-message" };
+    }
     const request = this.parseDonation(donation);
     if (!request) {
       this.notify();
@@ -229,8 +327,7 @@ class RouletteEngine extends EventEmitter {
     const knownGame = this.findGame(request.gameName);
     const canAutoApply =
       this.settings.mode === "auto" &&
-      knownGame &&
-      (request.kind === "remove" || knownGame.owned || knownGame.installed);
+      (request.kind === "add" || knownGame);
 
     if (canAutoApply) {
       this.applyRequest(request, "auto");
@@ -280,51 +377,82 @@ class RouletteEngine extends EventEmitter {
     return this.games.filter((game) => game.enabled && game.slots > 0);
   }
 
-  beginSpin() {
+  prepareSpin() {
     if (this.status === "spinning" || this.status === "playing") {
       throw new Error("현재는 룰렛을 돌릴 수 없습니다.");
     }
     const games = this.eligibleGames();
     if (!games.length) throw new Error("활성화된 게임이 없습니다.");
+    const round = this.round + 1;
+    const currentEndChance = round === 4 && this.endChance === 0
+      ? this.settings.endChanceStart
+      : this.endChance;
+    const chanceUsed = round >= 4 ? clamp(currentEndChance, 0, 100) : 0;
+    return {
+      round,
+      chanceUsed,
+      games: games.map(({ id, name, slots }) => ({ id, name, slots }))
+    };
+  }
 
-    this.round += 1;
+  beginPreparedSpin(context, selectedId, metadata = {}) {
+    if (!context || context.round !== this.round + 1) {
+      throw new Error("룰렛 준비 정보가 만료되었습니다. 다시 돌려 주세요.");
+    }
+    if (this.status === "spinning" || this.status === "playing") {
+      throw new Error("현재는 룰렛을 돌릴 수 없습니다.");
+    }
+    const selected = selectedId === "end"
+      ? null
+      : context.games.find((game) => game.id === selectedId);
+    if (selectedId !== "end" && !selected) {
+      throw new Error("룰렛 당첨 항목을 목록에서 찾지 못했습니다.");
+    }
+    if (selectedId === "end" && context.chanceUsed <= 0) {
+      throw new Error("현재 회차에는 방종 항목이 없습니다.");
+    }
+
+    this.round = context.round;
     if (this.round === 4 && this.endChance === 0) {
       this.endChance = this.settings.endChanceStart;
     }
-    const chanceUsed = this.round >= 4 ? clamp(this.endChance, 0, 100) : 0;
-    const roll = this.random() * 100;
-    let resultType = "game";
-    let resultName;
-    let resultId;
-
-    if (chanceUsed > 0 && roll < chanceUsed) {
-      resultType = "end";
-      resultName = "방종";
-    } else {
-      const totalSlots = games.reduce((sum, game) => sum + game.slots, 0);
-      let cursor = this.random() * totalSlots;
-      const selected = games.find((game) => {
-        cursor -= game.slots;
-        return cursor < 0;
-      }) || games[games.length - 1];
-      resultName = selected.name;
-      resultId = selected.id;
-    }
-
+    const resultType = selectedId === "end" ? "end" : "game";
     this.spin = {
       id: createId("spin"),
       round: this.round,
       resultType,
-      resultName,
-      resultId,
-      chanceUsed,
-      games: games.map(({ id, name, slots }) => ({ id, name, slots })),
-      startedAt: Date.now()
+      resultName: resultType === "end" ? "방종" : selected.name,
+      resultId: selected?.id,
+      chanceUsed: context.chanceUsed,
+      games: context.games,
+      startedAt: Date.now(),
+      provider: metadata.provider || "local",
+      animationVersion: metadata.animationVersion || null,
+      animationExtension: metadata.animationExtension || null,
+      fallbackReason: metadata.fallbackReason || null
     };
     this.status = "spinning";
     this.timer.running = false;
     this.notify();
     return this.spin;
+  }
+
+  beginSpin(metadata = {}) {
+    const context = this.prepareSpin();
+    const roll = this.random() * 100;
+    let selectedId;
+    if (context.chanceUsed > 0 && roll < context.chanceUsed) {
+      selectedId = "end";
+    } else {
+      const totalSlots = context.games.reduce((sum, game) => sum + game.slots, 0);
+      let cursor = this.random() * totalSlots;
+      const selected = context.games.find((game) => {
+        cursor -= game.slots;
+        return cursor < 0;
+      }) || context.games[context.games.length - 1];
+      selectedId = selected.id;
+    }
+    return this.beginPreparedSpin(context, selectedId, metadata);
   }
 
   finalizeSpin(spinId) {
@@ -350,6 +478,9 @@ class RouletteEngine extends EventEmitter {
           this.settings.endChanceMin,
           100
         );
+      }
+      if (this.settings.removeWinnerAfterSpin) {
+        this.games = this.games.filter((game) => game.id !== spin.resultId);
       }
     }
     this.history.unshift({
@@ -406,8 +537,18 @@ class RouletteEngine extends EventEmitter {
     this.notify();
   }
 
+  triggerCue(type) {
+    if (!["countdown", "timer-ended"].includes(type)) {
+      throw new Error("알 수 없는 알림음입니다.");
+    }
+    this.cue = { id: createId("cue"), type, createdAt: Date.now() };
+    this.notify();
+    return this.cue;
+  }
+
   tick(now = Date.now()) {
     if (!this.timer.running || !this.timer.endsAt) return false;
+    const previous = this.timer.remainingSec;
     const remaining = Math.max(0, Math.ceil((this.timer.endsAt - now) / 1000));
     const changed = remaining !== this.timer.remainingSec;
     this.timer.remainingSec = remaining;
@@ -415,6 +556,9 @@ class RouletteEngine extends EventEmitter {
       this.timer.running = false;
       this.timer.endsAt = null;
       this.status = "awaiting_spin";
+      this.cue = { id: createId("cue"), type: "timer-ended", createdAt: now };
+    } else if (previous > 4 && remaining <= 4) {
+      this.cue = { id: createId("cue"), type: "countdown", createdAt: now };
     }
     if (changed) this.notify();
     return remaining === 0;
@@ -426,6 +570,7 @@ class RouletteEngine extends EventEmitter {
     this.status = "idle";
     this.currentGame = null;
     this.spin = null;
+    this.cue = null;
     this.timer = {
       running: false,
       remainingSec: this.settings.roundDurationSec,

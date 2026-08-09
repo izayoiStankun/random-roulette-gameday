@@ -1,18 +1,57 @@
 const canvas = document.querySelector("#wheel");
 const context = canvas.getContext("2d");
+const localWheelDecorations = document.querySelectorAll(".local-wheel-decoration");
 const wheelScene = document.querySelector("#wheel-scene");
+const spinRoster = document.querySelector(".spin-roster");
+const spinRosterList = document.querySelector("#spin-roster-list");
 const gameHud = document.querySelector("#game-hud");
 const endScene = document.querySelector("#end-scene");
 const donationPop = document.querySelector("#donation-pop");
+const gameRoster = document.querySelector("#game-roster");
+const sunriseCountdown = document.querySelector("#sunrise-countdown");
+const overlayView = window.OverlayViewMode.resolveOverlayView(window.location.search);
+const hasLayer = (layer) => overlayView.layers.includes(layer);
+const overlaySounds = {
+  countdown: document.querySelector("#sound-countdown"),
+  "timer-ended": document.querySelector("#sound-timer-ended")
+};
 const palette = ["#0ea5a8", "#1686b9", "#485bb5", "#8b4eb6", "#ca4b87", "#e05c5c", "#d98434", "#a4a83c"];
 let lastSpinId = null;
 let lastDonationAt = null;
 let donationTimer;
+let lastCueId;
 let state;
+const gifCanvasPlayer = window.GifCanvas?.createGifCanvasPlayer
+  ? window.GifCanvas.createGifCanvasPlayer(canvas)
+  : { stop() {}, play() { return Promise.reject(new Error("GIF Canvas 플레이어를 불러오지 못했습니다.")); } };
+
+document.body.dataset.overlayView = overlayView.view;
 
 function formatTime(seconds) {
   const value = Math.max(0, Number(seconds) || 0);
   return `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+}
+
+function formatClock(seconds) {
+  const value = Math.max(0, Number(seconds) || 0);
+  const hours = Math.floor(value / 3600);
+  const minutes = Math.floor(value % 3600 / 60);
+  const remainingSeconds = value % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
+function handleSoundCue(nextState) {
+  const cue = nextState.cue;
+  if (!cue || cue.id === lastCueId) return;
+  lastCueId = cue.id;
+  if (!overlayView.playsAudio) return;
+  if (!["overlay", "both"].includes(nextState.settings.soundOutput)) return;
+  const audio = overlaySounds[cue.type];
+  if (!audio) return;
+  audio.pause();
+  audio.currentTime = 0;
+  audio.volume = Math.max(0, Math.min(1, Number(nextState.settings.soundVolume) / 100));
+  audio.play().catch(() => {});
 }
 
 function buildSlices(spin) {
@@ -58,19 +97,50 @@ function drawWheel(slices) {
       context.rotate(cursor + angle / 2);
       context.textAlign = "right";
       context.fillStyle = "white";
-      context.font = `800 ${angle > .2 ? 21 : 15}px Pretendard, sans-serif`;
+      const fontSize = angle > .35 ? 36 : angle > .16 ? 28 : 21;
+      context.font = `900 ${fontSize}px Pretendard, sans-serif`;
       context.shadowColor = "#000b";
-      context.shadowBlur = 5;
-      const maxChars = angle > .2 ? 22 : 12;
+      context.shadowBlur = 7;
+      context.lineWidth = 7;
+      context.strokeStyle = "#071018cc";
+      const maxChars = angle > .35 ? 18 : angle > .16 ? 13 : 9;
       const label = slice.name.length > maxChars ? `${slice.name.slice(0, maxChars - 1)}…` : slice.name;
-      context.fillText(label, radius - 28, 7);
+      context.strokeText(label, radius - 35, fontSize * .28);
+      context.fillText(label, radius - 35, fontSize * .28);
       context.restore();
     }
     cursor += angle;
   });
 }
 
+function renderSpinRoster(spin) {
+  const slices = buildSlices(spin);
+  const visible = slices.slice(0, 12);
+  spinRoster.classList.toggle("dense", visible.length > 8);
+  document.querySelector("#spin-roster-summary").textContent = `${slices.length}개 항목`;
+  spinRosterList.replaceChildren();
+  visible.forEach((slice) => {
+    const row = document.createElement("div");
+    row.className = `spin-roster-item${slice.type === "end" ? " end" : ""}`;
+    const swatch = document.createElement("i");
+    swatch.style.background = slice.color;
+    const name = document.createElement("strong");
+    name.textContent = slice.name;
+    const meta = document.createElement("small");
+    const percent = slice.weight * 100;
+    meta.textContent = `${percent < 1 && percent > 0 ? percent.toFixed(2) : percent.toFixed(1)}%`;
+    row.append(swatch, name, meta);
+    spinRosterList.append(row);
+  });
+  document.querySelector("#spin-roster-more").textContent = slices.length > visible.length
+    ? `외 ${slices.length - visible.length}개 항목`
+    : "";
+}
+
 function spinWheel(spin) {
+  gifCanvasPlayer.stop();
+  canvas.hidden = false;
+  localWheelDecorations.forEach((element) => { element.hidden = false; });
   const slices = buildSlices(spin);
   drawWheel(slices);
   let cursor = 0;
@@ -90,9 +160,22 @@ function spinWheel(spin) {
   canvas.style.transform = `rotate(${360 * 8 - targetCenter}deg)`;
 }
 
+function showWheelOfNamesAnimation(spin) {
+  gifCanvasPlayer.stop();
+  canvas.hidden = false;
+  canvas.style.transition = "none";
+  canvas.style.transform = "rotate(0deg)";
+  localWheelDecorations.forEach((element) => { element.hidden = true; });
+  const extension = spin.animationExtension === "webp" ? "webp" : "gif";
+  gifCanvasPlayer.play(`/wheel-animation/${encodeURIComponent(spin.animationVersion)}.${extension}`).catch(() => {
+    if (state?.spin?.id === spin.id) spinWheel(spin);
+  });
+}
+
 function showDonation(donation) {
   if (!donation || donation.receivedAt === lastDonationAt) return;
   lastDonationAt = donation.receivedAt;
+  if (!hasLayer("donation") || Date.now() - Number(donation.receivedAt) > 10000) return;
   document.querySelector("#donation-donor").textContent = donation.donor;
   document.querySelector("#donation-amount").textContent = `${Number(donation.amount).toLocaleString()}원`;
   document.querySelector("#donation-text").textContent = donation.text || "후원 감사합니다!";
@@ -101,22 +184,97 @@ function showDonation(donation) {
   donationTimer = setTimeout(() => donationPop.classList.add("hidden"), 5500);
 }
 
+function renderRoster(games, preview, probabilityState) {
+  const totalSlots = games.reduce((sum, game) => sum + game.slots, 0);
+  const endChance = Number(probabilityState?.endChance) || 0;
+  const gamesChance = 100 - endChance;
+  document.querySelector("#roster-kicker").textContent = preview ? "NEXT ROUND PREVIEW" : "ROULETTE POOL";
+  document.querySelector("#roster-title").textContent = preview ? "다음 라운드 미리보기" : "룰렛 목록";
+  document.querySelector("#roster-summary").textContent = endChance > 0
+    ? `게임 ${gamesChance}% · 방종 ${endChance}%`
+    : `${games.length}개 · 총 ${totalSlots}칸 · 게임 100%`;
+  const list = document.querySelector("#roster-list");
+  list.replaceChildren();
+  if (endChance > 0) {
+    const endRow = document.createElement("div");
+    endRow.className = "roster-item roster-end";
+    const rank = document.createElement("span");
+    rank.textContent = "END";
+    const name = document.createElement("strong");
+    name.textContent = "방종";
+    const slots = document.createElement("small");
+    slots.textContent = `${probabilityState.round}회차`;
+    const chance = document.createElement("em");
+    chance.textContent = `${endChance.toFixed(1)}%`;
+    endRow.append(rank, name, slots, chance);
+    list.append(endRow);
+  }
+  games.slice(0, 12).forEach((game, index) => {
+    const probability = totalSlots > 0 ? game.slots / totalSlots * gamesChance : 0;
+    const row = document.createElement("div");
+    row.className = "roster-item";
+    const rank = document.createElement("span");
+    rank.textContent = String(index + 1).padStart(2, "0");
+    const name = document.createElement("strong");
+    name.textContent = game.name;
+    const slots = document.createElement("small");
+    slots.textContent = `${game.slots}칸`;
+    const chance = document.createElement("em");
+    chance.textContent = `${probability < 1 && probability > 0 ? probability.toFixed(2) : probability.toFixed(1)}%`;
+    row.append(rank, name, slots, chance);
+    list.append(row);
+  });
+  if (games.length > 12) {
+    const more = document.createElement("div");
+    more.className = "roster-more";
+    more.textContent = `외 ${games.length - 12}개 게임`;
+    list.append(more);
+  }
+}
+
+function renderSunrise(sunrise) {
+  const visible = hasLayer("sunrise") && Boolean(sunrise?.enabled && sunrise.configured && sunrise.visible && sunrise.sunriseAt);
+  sunriseCountdown.classList.toggle("hidden", !visible);
+  if (!visible) return;
+  document.querySelector("#sunrise-timer").textContent = formatClock(sunrise.remainingSec);
+  const sunriseTime = new Date(sunrise.sunriseAt);
+  document.querySelector("#sunrise-time").textContent = `일출 ${sunriseTime.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 function render(nextState) {
   state = nextState;
+  handleSoundCue(state);
   const isSpinning = state.status === "spinning" && state.spin;
-  wheelScene.classList.toggle("hidden", !isSpinning);
-  endScene.classList.toggle("hidden", state.status !== "ended");
-  const showHud = Boolean(state.currentGame) && !isSpinning && state.status !== "ended";
+  const showWheel = hasLayer("wheel") && isSpinning;
+  wheelScene.classList.toggle("hidden", !showWheel);
+  endScene.classList.toggle("hidden", !hasLayer("end") || state.status !== "ended");
+  const showHud = hasLayer("hud") && Boolean(state.currentGame) && !isSpinning && ["ready", "playing", "paused"].includes(state.status);
   gameHud.classList.toggle("hidden", !showHud);
+  const games = state.games.filter((game) => game.enabled && game.slots > 0);
+  const isWaiting = ["idle", "awaiting_spin"].includes(state.status);
+  const isPreview = state.settings.nextRoundPreviewEnabled && (
+    state.status === "ready" ||
+    (state.status === "playing" && state.timer.running && state.timer.remainingSec > 0 && state.timer.remainingSec <= 120)
+  );
+  const showRoster = hasLayer("roster") && games.length > 0 && !isSpinning && state.status !== "ended" && (isWaiting || isPreview);
+  gameRoster.classList.toggle("hidden", !showRoster);
+  gameRoster.classList.toggle("preview", isPreview);
+  if (showRoster) renderRoster(games, isPreview, state.probability);
+  renderSunrise(state.sunrise);
 
-  if (isSpinning) {
+  if (showWheel) {
+    renderSpinRoster(state.spin);
     document.querySelector("#wheel-round").textContent = state.spin.round;
     document.querySelector("#chance-callout").textContent = state.spin.chanceUsed
       ? `방종 확률 ${state.spin.chanceUsed}%`
       : "게임 룰렛";
     if (state.spin.id !== lastSpinId) {
       lastSpinId = state.spin.id;
-      spinWheel(state.spin);
+      if (state.spin.provider === "wheelofnames" && state.spin.animationVersion) {
+        showWheelOfNamesAnimation(state.spin);
+      } else {
+        spinWheel(state.spin);
+      }
     }
   }
   if (showHud) {
@@ -132,6 +290,25 @@ function render(nextState) {
   showDonation(state.lastDonation);
 }
 
-fetch("/api/state").then((response) => response.json()).then(render);
-const events = new EventSource("/events");
-events.addEventListener("state", (event) => render(JSON.parse(event.data)));
+async function connectOverlay() {
+  try {
+    const response = await fetch("/api/state");
+    const initialState = await response.json();
+    lastCueId = initialState.cue?.id;
+    render(initialState);
+  } catch {
+    // SSE의 첫 상태를 초기 상태로 사용합니다.
+  }
+  const events = new EventSource("/events");
+  let receivedState = Boolean(state);
+  events.addEventListener("state", (event) => {
+    const nextState = JSON.parse(event.data);
+    if (!receivedState) {
+      lastCueId = nextState.cue?.id;
+      receivedState = true;
+    }
+    render(nextState);
+  });
+}
+
+connectOverlay();

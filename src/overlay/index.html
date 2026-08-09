@@ -8,13 +8,24 @@
 </head>
 <body>
   <div id="overlay">
+    <audio id="sound-countdown" preload="auto" src="audio/countdown-4s.mp3"></audio>
+    <audio id="sound-timer-ended" preload="auto" src="audio/timer-ended.mp3"></audio>
     <section id="wheel-scene" class="wheel-scene hidden">
       <div class="round-label"><span>ROUND</span><strong id="wheel-round">1</strong></div>
       <div class="wheel-wrap">
         <canvas id="wheel" width="900" height="900"></canvas>
-        <div class="wheel-cap">R</div>
-        <div class="pointer"></div>
+        <div class="wheel-cap local-wheel-decoration">R</div>
+        <div class="pointer local-wheel-decoration"></div>
       </div>
+      <aside class="spin-roster" aria-label="현재 룰렛 목록">
+        <div class="spin-roster-heading">
+          <span>ROULETTE ENTRIES</span>
+          <strong>현재 회전 목록</strong>
+          <small id="spin-roster-summary"></small>
+        </div>
+        <div id="spin-roster-list" class="spin-roster-list"></div>
+        <div id="spin-roster-more" class="spin-roster-more"></div>
+      </aside>
       <div id="chance-callout" class="chance-callout">방종 확률 5%</div>
     </section>
 
@@ -31,6 +42,21 @@
       </div>
     </section>
 
+    <section id="game-roster" class="game-roster hidden">
+      <div class="roster-heading">
+        <span id="roster-kicker">ROULETTE POOL</span>
+        <strong id="roster-title">다음 룰렛 목록</strong>
+        <small id="roster-summary">0개 · 0칸</small>
+      </div>
+      <div id="roster-list" class="roster-list"></div>
+    </section>
+
+    <section id="sunrise-countdown" class="sunrise-countdown hidden">
+      <span>SUNRISE IN</span>
+      <strong id="sunrise-timer">01:00:00</strong>
+      <small id="sunrise-time">일출 05:30</small>
+    </section>
+
     <section id="donation-pop" class="donation-pop hidden">
       <span id="donation-donor">닉네임</span>
       <strong id="donation-amount">1,000원</strong>
@@ -43,6 +69,8 @@
       <div>오늘의 랜덤룰렛게임데이 종료</div>
     </section>
   </div>
+  <script src="view-mode.js"></script>
+  <script src="vendor/gif-canvas-player.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
