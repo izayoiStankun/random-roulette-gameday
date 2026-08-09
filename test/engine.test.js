@@ -66,7 +66,7 @@ test("명령 없는 일반 후원 메시지를 게임 이름으로 추가 요청
   assert.equal(result.request.slots, 5);
 });
 
-test("자동 모드는 확인된 게임 요청만 즉시 반영한다", () => {
+test("자동 모드는 보유 여부와 관계없이 게임 추가 요청을 즉시 반영한다", () => {
   const engine = new RouletteEngine({ settings: { mode: "auto" } });
   engine.addGame("보유 게임", { owned: true });
   const known = engine.ingestDonation({
@@ -81,7 +81,21 @@ test("자동 모드는 확인된 게임 요청만 즉시 반영한다", () => {
   });
   assert.equal(known.action, "applied");
   assert.equal(engine.findGame("보유 게임").slots, 4);
-  assert.equal(unknown.action, "queued");
+  assert.equal(unknown.action, "applied");
+  assert.equal(engine.findGame("미확인 게임").slots, 1);
+  assert.equal(engine.queue.length, 0);
+});
+
+test("자동 모드에서도 목록에 없는 게임 제거 요청은 승인 대기시킨다", () => {
+  const engine = new RouletteEngine({ settings: { mode: "auto" } });
+  const result = engine.ingestDonation({
+    donatorNickname: "시청자",
+    payAmount: "2000",
+    donationText: "!게임빼기 없는 게임"
+  });
+  assert.equal(result.action, "queued");
+  assert.equal(engine.queue.length, 1);
+  assert.equal(engine.findGame("없는 게임"), undefined);
 });
 
 test("설정한 제외 문구가 있는 후원은 룰렛 요청에 반영하지 않는다", () => {

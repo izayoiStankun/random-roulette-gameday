@@ -1,6 +1,6 @@
 const path = require("node:path");
 const fs = require("node:fs/promises");
-const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require("electron");
+const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
 const { RouletteEngine } = require("./engine");
 const { JsonStore } = require("./store");
@@ -14,6 +14,18 @@ const { isValidLocation } = require("./sunrise");
 const { getWindowsLocation } = require("./windows-location");
 const { createGameBackup, parseGameBackup } = require("./game-backup");
 const { resolveChzzkRedirectUri } = require("./app-config");
+
+const ALLOWED_OVERLAY_QUERIES = new Set([
+  "",
+  "view=all&audio=off",
+  "view=wheel",
+  "view=hud",
+  "view=roster",
+  "view=donation",
+  "view=sunrise",
+  "view=end",
+  "view=audio"
+]);
 
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -120,6 +132,10 @@ function createWindow() {
 
 function installIpcHandlers() {
   ipcMain.handle("state:get", () => engine.snapshot());
+  ipcMain.handle("clipboard:write", (_event, value) => {
+    clipboard.writeText(String(value || "").slice(0, 2048));
+    return { ok: true };
+  });
   ipcMain.handle("secrets:summary", () => {
     const secrets = store.readSecrets();
     return {
@@ -279,7 +295,12 @@ function installIpcHandlers() {
       case "donation:simulate":
         return engine.ingestDonation(payload);
       case "overlay:open":
-        shell.openExternal(`http://127.0.0.1:${engine.settings.overlayPort}/overlay/`);
+        {
+          const query = String(payload?.query || "");
+          if (!ALLOWED_OVERLAY_QUERIES.has(query)) throw new Error("지원하지 않는 OBS 소스 주소입니다.");
+          const suffix = query ? `?${query}` : "";
+          shell.openExternal(`http://127.0.0.1:${engine.settings.overlayPort}/overlay/${suffix}`);
+        }
         return { ok: true };
       default:
         throw new Error(`알 수 없는 명령: ${name}`);

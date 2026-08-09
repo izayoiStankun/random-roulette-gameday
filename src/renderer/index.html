@@ -134,7 +134,7 @@
       </div>
       <div class="panel">
         <div class="table-heading">
-          <div><h2>승인 대기열</h2><p id="pending-queue-summary">자동 모드에서도 미등록 게임은 이곳에서 확인합니다.</p></div>
+          <div><h2>승인 대기열</h2><p id="pending-queue-summary">수동 모드 요청과 자동으로 처리할 수 없는 제거 요청을 이곳에서 확인합니다.</p></div>
         </div>
         <div id="queue-list" class="queue-list"></div>
       </div>
@@ -154,7 +154,7 @@
           <button data-mode="manual" class="mode-button active">수동 모드</button>
           <button data-mode="auto" class="mode-button">자동 모드</button>
         </div>
-        <p class="help">수동은 모든 후원 요청을 승인 대기시킵니다. 자동은 이미 확인된 게임의 요청을 즉시 반영하고, 타이머 종료 후 다음 룰렛을 자동 실행합니다.</p>
+        <p class="help">수동은 모든 후원 요청을 승인 대기시킵니다. 자동은 보유 여부와 관계없이 유효한 게임 추가 요청을 즉시 반영하고, 타이머 종료 후 다음 룰렛을 자동 실행합니다. 목록에 없는 게임 제거 요청만 승인 대기합니다.</p>
         <form id="rules-form" class="form-grid">
           <label>게임 시간(분)<input id="round-minutes" type="number" min="1" max="1440"></label>
           <label>방종 시작 확률(%)<input id="end-start" type="number" min="0" max="100"></label>
@@ -182,7 +182,20 @@
         <hr>
         <h2>OBS Browser Source</h2>
         <code id="overlay-uri">http://127.0.0.1:17554/overlay/</code>
-        <p class="help">OBS 소스 → 브라우저에서 위 URL을 넣고 1920×1080으로 설정하세요. localhost 통신이라 외부 인터넷을 사용하지 않습니다.</p>
+        <p class="help">위 주소는 기존 통합 화면입니다. OBS 소스 → 브라우저에서 URL을 넣고 1920×1080으로 설정하세요. localhost 통신이라 외부 인터넷을 사용하지 않습니다.</p>
+        <details class="obs-source-details" open>
+          <summary>장면별로 배치하는 요소별 OBS 소스</summary>
+          <p class="help">필요한 요소를 각각 브라우저 소스로 추가하면 OBS 장면마다 위치·크기·표시 여부를 따로 조절할 수 있습니다.</p>
+          <div id="obs-source-list" class="obs-source-list"></div>
+          <div class="obs-scene-guide">
+            <strong>권장 구성</strong>
+            <span>대기: 목록·후원·일출</span>
+            <span>룰렛: 룰렛·후원</span>
+            <span>게임: 게임 HUD·후원·일출</span>
+            <span>종료: 방종 결과</span>
+          </div>
+          <p class="privacy-note"><strong>알림음 전용</strong> 소스는 한 번만 만든 뒤 다른 장면에서는 OBS의 <strong>기존 항목 추가</strong>로 재사용하세요. 새 브라우저 소스를 여러 개 만들면 소리가 겹칠 수 있습니다. 다른 개별 소스는 소리를 재생하지 않습니다.</p>
+        </details>
         <button id="reset-event" class="button danger">회차·타이머·기록 초기화</button>
       </div>
 

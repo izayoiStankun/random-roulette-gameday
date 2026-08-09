@@ -8,6 +8,8 @@ const endScene = document.querySelector("#end-scene");
 const donationPop = document.querySelector("#donation-pop");
 const gameRoster = document.querySelector("#game-roster");
 const sunriseCountdown = document.querySelector("#sunrise-countdown");
+const overlayView = window.OverlayViewMode.resolveOverlayView(window.location.search);
+const hasLayer = (layer) => overlayView.layers.includes(layer);
 const overlaySounds = {
   countdown: document.querySelector("#sound-countdown"),
   "timer-ended": document.querySelector("#sound-timer-ended")
@@ -18,6 +20,8 @@ let lastDonationAt = null;
 let donationTimer;
 let lastCueId;
 let state;
+
+document.body.dataset.overlayView = overlayView.view;
 
 function formatTime(seconds) {
   const value = Math.max(0, Number(seconds) || 0);
@@ -36,6 +40,7 @@ function handleSoundCue(nextState) {
   const cue = nextState.cue;
   if (!cue || cue.id === lastCueId) return;
   lastCueId = cue.id;
+  if (!overlayView.playsAudio) return;
   if (!["overlay", "both"].includes(nextState.settings.soundOutput)) return;
   const audio = overlaySounds[cue.type];
   if (!audio) return;
@@ -133,6 +138,7 @@ function showWheelOfNamesAnimation(spin) {
 function showDonation(donation) {
   if (!donation || donation.receivedAt === lastDonationAt) return;
   lastDonationAt = donation.receivedAt;
+  if (!hasLayer("donation") || Date.now() - Number(donation.receivedAt) > 10000) return;
   document.querySelector("#donation-donor").textContent = donation.donor;
   document.querySelector("#donation-amount").textContent = `${Number(donation.amount).toLocaleString()}원`;
   document.querySelector("#donation-text").textContent = donation.text || "후원 감사합니다!";
@@ -190,7 +196,7 @@ function renderRoster(games, preview, probabilityState) {
 }
 
 function renderSunrise(sunrise) {
-  const visible = Boolean(sunrise?.enabled && sunrise.configured && sunrise.visible && sunrise.sunriseAt);
+  const visible = hasLayer("sunrise") && Boolean(sunrise?.enabled && sunrise.configured && sunrise.visible && sunrise.sunriseAt);
   sunriseCountdown.classList.toggle("hidden", !visible);
   if (!visible) return;
   document.querySelector("#sunrise-timer").textContent = formatClock(sunrise.remainingSec);
@@ -202,9 +208,10 @@ function render(nextState) {
   state = nextState;
   handleSoundCue(state);
   const isSpinning = state.status === "spinning" && state.spin;
-  wheelScene.classList.toggle("hidden", !isSpinning);
-  endScene.classList.toggle("hidden", state.status !== "ended");
-  const showHud = Boolean(state.currentGame) && !isSpinning && ["ready", "playing", "paused"].includes(state.status);
+  const showWheel = hasLayer("wheel") && isSpinning;
+  wheelScene.classList.toggle("hidden", !showWheel);
+  endScene.classList.toggle("hidden", !hasLayer("end") || state.status !== "ended");
+  const showHud = hasLayer("hud") && Boolean(state.currentGame) && !isSpinning && ["ready", "playing", "paused"].includes(state.status);
   gameHud.classList.toggle("hidden", !showHud);
   const games = state.games.filter((game) => game.enabled && game.slots > 0);
   const isWaiting = ["idle", "awaiting_spin"].includes(state.status);
@@ -212,13 +219,13 @@ function render(nextState) {
     state.status === "ready" ||
     (state.status === "playing" && state.timer.running && state.timer.remainingSec > 0 && state.timer.remainingSec <= 120)
   );
-  const showRoster = games.length > 0 && !isSpinning && state.status !== "ended" && (isWaiting || isPreview);
+  const showRoster = hasLayer("roster") && games.length > 0 && !isSpinning && state.status !== "ended" && (isWaiting || isPreview);
   gameRoster.classList.toggle("hidden", !showRoster);
   gameRoster.classList.toggle("preview", isPreview);
   if (showRoster) renderRoster(games, isPreview, state.probability);
   renderSunrise(state.sunrise);
 
-  if (isSpinning) {
+  if (showWheel) {
     document.querySelector("#wheel-round").textContent = state.spin.round;
     document.querySelector("#chance-callout").textContent = state.spin.chanceUsed
       ? `방종 확률 ${state.spin.chanceUsed}%`
@@ -245,6 +252,25 @@ function render(nextState) {
   showDonation(state.lastDonation);
 }
 
-fetch("/api/state").then((response) => response.json()).then(render);
-const events = new EventSource("/events");
-events.addEventListener("state", (event) => render(JSON.parse(event.data)));
+async function connectOverlay() {
+  try {
+    const response = await fetch("/api/state");
+    const initialState = await response.json();
+    lastCueId = initialState.cue?.id;
+    render(initialState);
+  } catch {
+    // SSE의 첫 상태를 초기 상태로 사용합니다.
+  }
+  const events = new EventSource("/events");
+  let receivedState = Boolean(state);
+  events.addEventListener("state", (event) => {
+    const nextState = JSON.parse(event.data);
+    if (!receivedState) {
+      lastCueId = nextState.cue?.id;
+      receivedState = true;
+    }
+    render(nextState);
+  });
+}
+
+connectOverlay();

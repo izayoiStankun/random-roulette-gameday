@@ -323,8 +323,7 @@ class RouletteEngine extends EventEmitter {
     const knownGame = this.findGame(request.gameName);
     const canAutoApply =
       this.settings.mode === "auto" &&
-      knownGame &&
-      (request.kind === "remove" || knownGame.owned || knownGame.installed);
+      (request.kind === "add" || knownGame);
 
     if (canAutoApply) {
       this.applyRequest(request, "auto");

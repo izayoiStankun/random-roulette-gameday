@@ -131,6 +131,22 @@ label { display: grid; gap: 6px; color: #b5bfca; font-size: 12px; }
 .wide { grid-column: 1 / -1; }
 .stack-form { display: grid; gap: 12px; margin: 18px 0; }
 code { display: block; padding: 11px; background: #090f16; border: 1px solid #273342; color: var(--accent); border-radius: 7px; overflow-wrap: anywhere; margin: 12px 0; }
+.obs-source-details { margin: 16px 0 20px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #0b1119; }
+.obs-source-details > summary { padding: 13px 14px; cursor: pointer; font-size: 13px; font-weight: 800; }
+.obs-source-details[open] > summary { border-bottom: 1px solid var(--line); }
+.obs-source-details > .help { padding: 0 14px; margin-top: 12px; }
+.obs-source-list { display: grid; gap: 7px; padding: 12px 14px; }
+.obs-source-row { display: grid; grid-template-columns: minmax(100px, 130px) 1fr auto; gap: 8px; align-items: center; }
+.obs-source-row > div { display: grid; gap: 3px; }
+.obs-source-row strong { font-size: 12px; }
+.obs-source-row small { color: var(--muted); font-size: 10px; }
+.obs-source-row code { margin: 0; padding: 8px 9px; font-size: 10px; }
+.obs-source-actions { display: flex; gap: 5px; }
+.obs-source-actions .button { padding: 8px 9px; font-size: 10px; }
+.obs-scene-guide { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 13px; }
+.obs-scene-guide strong, .obs-scene-guide span { padding: 6px 8px; border-radius: 6px; background: #14202b; font-size: 10px; }
+.obs-scene-guide strong { color: var(--accent); }
+.obs-source-details .privacy-note { margin: 0 14px 14px; }
 hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
 .update-panel { grid-column: 1 / -1; }
 .update-heading { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
@@ -185,4 +201,6 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 24px 0; }
   .steam-web-form { grid-template-columns: 1fr 1fr; }
   .steam-web-form .button { grid-column: 1 / -1; }
   .steam-web-help { align-items: flex-start; flex-direction: column; }
+  .obs-source-row { grid-template-columns: 1fr auto; }
+  .obs-source-row > div { grid-column: 1 / -1; }
 }

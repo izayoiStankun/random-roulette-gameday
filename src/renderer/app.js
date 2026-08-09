@@ -5,6 +5,16 @@ let updateStatus;
 let lastCueId;
 let chzzkRedirectUri;
 const selectedGameIds = new Set();
+const OBS_SOURCES = [
+  { query: "view=all&audio=off", label: "통합 화면 (무음)", description: "기존 요소를 한 화면에 표시" },
+  { query: "view=wheel", label: "룰렛", description: "룰렛 회전 중에만 표시" },
+  { query: "view=hud", label: "게임 HUD", description: "게임명과 30분 타이머" },
+  { query: "view=roster", label: "룰렛 목록", description: "대기·다음 라운드 목록" },
+  { query: "view=donation", label: "후원 팝업", description: "최근 후원을 5.5초간 표시" },
+  { query: "view=sunrise", label: "일출 카운트다운", description: "일출 1시간 전부터 표시" },
+  { query: "view=end", label: "방종 결과", description: "방종 당첨 시 전체 화면" },
+  { query: "view=audio", label: "알림음 전용", description: "화면 없이 타이머 음원만 재생" }
+];
 
 const $ = (selector) => document.querySelector(selector);
 const appSounds = {
@@ -198,7 +208,7 @@ function renderQueue() {
       </div>` : ""}
     </div>`;
   $("#pending-queue-summary").textContent = pendingItems.length
-    ? `${pendingItems.length}개 요청을 확인해 주세요. 미등록·별칭 게임은 이름을 수정한 뒤 승인할 수 있습니다.`
+    ? `${pendingItems.length}개 요청을 확인해 주세요. 필요하면 게임 이름을 수정한 뒤 승인할 수 있습니다.`
     : "현재 확인할 요청이 없습니다.";
   $("#queue-list").innerHTML = pendingItems.length
     ? pendingItems.map((item) => renderItem(item, true)).join("")
@@ -232,6 +242,18 @@ function populateSettings() {
   $("#donation-exclude").value = settings.donationExcludeKeywords;
   $("#redirect-uri").textContent = chzzkRedirectUri || `http://127.0.0.1:${settings.overlayPort}/oauth/callback`;
   $("#overlay-uri").textContent = `http://127.0.0.1:${settings.overlayPort}/overlay/`;
+  const overlayBase = `http://127.0.0.1:${settings.overlayPort}/overlay/`;
+  $("#obs-source-list").innerHTML = OBS_SOURCES.map((source) => {
+    const url = `${overlayBase}?${source.query}`;
+    return `<div class="obs-source-row" data-overlay-query="${escapeHtml(source.query)}">
+      <div><strong>${escapeHtml(source.label)}</strong><small>${escapeHtml(source.description)}</small></div>
+      <code>${escapeHtml(url)}</code>
+      <span class="obs-source-actions">
+        <button class="button subtle obs-source-copy" type="button">복사</button>
+        <button class="button subtle obs-source-preview" type="button">열기</button>
+      </span>
+    </div>`;
+  }).join("");
 }
 
 function bindEvents() {
@@ -330,6 +352,17 @@ function bindEvents() {
   $("#steam-key-page").addEventListener("click", () => command("steam:key-page"));
   $("#steam-privacy-page").addEventListener("click", () => command("steam:privacy-page"));
   $("#overlay-open").addEventListener("click", () => command("overlay:open"));
+  $("#obs-source-list").addEventListener("click", async (event) => {
+    const row = event.target.closest("[data-overlay-query]");
+    if (!row) return;
+    if (event.target.classList.contains("obs-source-copy")) {
+      await window.roulette.copyText(row.querySelector("code").textContent);
+      showToast("OBS 소스 주소를 복사했습니다.");
+    }
+    if (event.target.classList.contains("obs-source-preview")) {
+      await command("overlay:open", { query: row.dataset.overlayQuery });
+    }
+  });
 
   $("#spin").addEventListener("click", async () => {
     const button = $("#spin");

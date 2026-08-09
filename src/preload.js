@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("roulette", {
   installUpdate: () => ipcRenderer.invoke("update:install"),
   openUpdatePage: () => ipcRenderer.invoke("update:open"),
   getCurrentLocation: () => ipcRenderer.invoke("location:current"),
+  copyText: (value) => ipcRenderer.invoke("clipboard:write", value),
   onState: (callback) => {
     const listener = (_event, state) => callback(state);
     ipcRenderer.on("state", listener);
