@@ -93,12 +93,14 @@ async function beginConfiguredSpin() {
       overlayServer.setWheelAnimation({
         version: animationVersion,
         data: generated.animation,
-        contentType: generated.contentType
+        contentType: generated.contentType,
+        extension: generated.extension
       });
       sendWheelStatus("connected", "Wheel of Names 연결됨");
       return engine.beginPreparedSpin(context, generated.winnerId, {
         provider: "wheelofnames",
-        animationVersion
+        animationVersion,
+        animationExtension: generated.extension
       });
     } catch (error) {
       sendWheelStatus("fallback", `${error.message} 기존 로컬 룰렛으로 진행합니다.`);

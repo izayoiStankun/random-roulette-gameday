@@ -115,8 +115,13 @@ test("외부 룰렛 당첨 결과를 확정하고 ON이면 당첨 게임을 목�
   const engine = new RouletteEngine({ settings: { removeWinnerAfterSpin: true } });
   const game = engine.addGame("삭제될 게임");
   const context = engine.prepareSpin();
-  const spin = engine.beginPreparedSpin(context, game.id, { provider: "wheelofnames", animationVersion: "123" });
+  const spin = engine.beginPreparedSpin(context, game.id, {
+    provider: "wheelofnames",
+    animationVersion: "123",
+    animationExtension: "gif"
+  });
   assert.equal(spin.provider, "wheelofnames");
+  assert.equal(spin.animationExtension, "gif");
   assert.equal(spin.resultName, "삭제될 게임");
   engine.finalizeSpin(spin.id);
   assert.equal(engine.currentGame.name, "삭제될 게임");

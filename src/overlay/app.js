@@ -106,6 +106,9 @@ function drawWheel(slices) {
 }
 
 function spinWheel(spin) {
+  wheelAnimation.onload = null;
+  wheelAnimation.onerror = null;
+  wheelAnimation.removeAttribute("src");
   wheelAnimation.hidden = true;
   canvas.hidden = false;
   localWheelDecorations.forEach((element) => { element.hidden = false; });
@@ -132,7 +135,15 @@ function showWheelOfNamesAnimation(spin) {
   canvas.hidden = true;
   localWheelDecorations.forEach((element) => { element.hidden = true; });
   wheelAnimation.hidden = false;
-  wheelAnimation.src = `/wheel-animation/${encodeURIComponent(spin.animationVersion)}.webp`;
+  wheelAnimation.onload = () => {
+    wheelAnimation.onload = null;
+    wheelAnimation.onerror = null;
+  };
+  wheelAnimation.onerror = () => {
+    if (state?.spin?.id === spin.id) spinWheel(spin);
+  };
+  const extension = spin.animationExtension === "webp" ? "webp" : "gif";
+  wheelAnimation.src = `/wheel-animation/${encodeURIComponent(spin.animationVersion)}.${extension}`;
 }
 
 function showDonation(donation) {

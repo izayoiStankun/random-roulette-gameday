@@ -39,11 +39,10 @@ async function createSpinAnimation({ apiKey, context, fetchImpl = globalThis.fet
           pageBackgroundColor: "#071620",
           entries
         },
-        imageFormat: "webp",
+        imageFormat: "gif",
         size: 360,
         fps: 24,
-        loop: false,
-        webpQuality: 90
+        loop: false
       }),
       signal: AbortSignal.timeout(30000)
     });
@@ -73,7 +72,11 @@ async function createSpinAnimation({ apiKey, context, fetchImpl = globalThis.fet
   if (!animation.length || animation.length > 32 * 1024 * 1024) {
     throw new Error("Wheel of Names 회전 영상을 사용할 수 없습니다.");
   }
-  return { winnerId, animation, contentType: "image/webp" };
+  const signature = animation.subarray(0, 6).toString("ascii");
+  if (signature !== "GIF87a" && signature !== "GIF89a") {
+    throw new Error("Wheel of Names 회전 영상이 올바른 GIF 형식이 아닙니다.");
+  }
+  return { winnerId, animation, contentType: "image/gif", extension: "gif" };
 }
 
 module.exports = { API_URL, createSpinAnimation, createWheelEntries };

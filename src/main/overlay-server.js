@@ -61,7 +61,7 @@ class OverlayServer extends EventEmitter {
 
     if (url.pathname.startsWith("/wheel-animation/")) {
       const expectedPath = this.wheelAnimation
-        ? `/wheel-animation/${this.wheelAnimation.version}.webp`
+        ? `/wheel-animation/${this.wheelAnimation.version}.${this.wheelAnimation.extension}`
         : null;
       if (!expectedPath || url.pathname !== expectedPath) {
         response.writeHead(404);
@@ -119,11 +119,16 @@ class OverlayServer extends EventEmitter {
     }
   }
 
-  setWheelAnimation({ version, data, contentType }) {
+  setWheelAnimation({ version, data, contentType, extension }) {
+    const cleanExtension = String(extension || "gif").toLowerCase();
+    if (!new Set(["gif", "webp"]).has(cleanExtension)) {
+      throw new Error("지원하지 않는 룰렛 애니메이션 형식입니다.");
+    }
     this.wheelAnimation = {
       version: String(version),
       data: Buffer.from(data),
-      contentType: contentType || "image/webp"
+      contentType: contentType || `image/${cleanExtension}`,
+      extension: cleanExtension
     };
   }
 

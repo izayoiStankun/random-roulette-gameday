@@ -424,6 +424,7 @@ class RouletteEngine extends EventEmitter {
       startedAt: Date.now(),
       provider: metadata.provider || "local",
       animationVersion: metadata.animationVersion || null,
+      animationExtension: metadata.animationExtension || null,
       fallbackReason: metadata.fallbackReason || null
     };
     this.status = "spinning";
