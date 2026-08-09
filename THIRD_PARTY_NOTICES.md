@@ -20,3 +20,10 @@ are retained here as a license record.
 
 Downloaded on 2026-08-02. These files are used as application sound effects and
 must not be redistributed as a standalone sound-effects collection.
+
+## GIF decoding
+
+`src/overlay/vendor/gif-canvas-player.js` incorporates `gifuct-js` 2.1.2,
+copyright Matt Way, under the MIT License. The library source is available at
+https://github.com/matt-way/gifuct-js and is used to decode Wheel of Names GIF
+frames for Canvas rendering inside OBS Browser Source.

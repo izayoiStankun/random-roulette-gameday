@@ -1,6 +1,5 @@
 const canvas = document.querySelector("#wheel");
 const context = canvas.getContext("2d");
-const wheelAnimation = document.querySelector("#wheel-animation");
 const localWheelDecorations = document.querySelectorAll(".local-wheel-decoration");
 const wheelScene = document.querySelector("#wheel-scene");
 const gameHud = document.querySelector("#game-hud");
@@ -20,6 +19,9 @@ let lastDonationAt = null;
 let donationTimer;
 let lastCueId;
 let state;
+const gifCanvasPlayer = window.GifCanvas?.createGifCanvasPlayer
+  ? window.GifCanvas.createGifCanvasPlayer(canvas)
+  : { stop() {}, play() { return Promise.reject(new Error("GIF Canvas 플레이어를 불러오지 못했습니다.")); } };
 
 document.body.dataset.overlayView = overlayView.view;
 
@@ -106,10 +108,7 @@ function drawWheel(slices) {
 }
 
 function spinWheel(spin) {
-  wheelAnimation.onload = null;
-  wheelAnimation.onerror = null;
-  wheelAnimation.removeAttribute("src");
-  wheelAnimation.hidden = true;
+  gifCanvasPlayer.stop();
   canvas.hidden = false;
   localWheelDecorations.forEach((element) => { element.hidden = false; });
   const slices = buildSlices(spin);
@@ -132,18 +131,15 @@ function spinWheel(spin) {
 }
 
 function showWheelOfNamesAnimation(spin) {
-  canvas.hidden = true;
+  gifCanvasPlayer.stop();
+  canvas.hidden = false;
+  canvas.style.transition = "none";
+  canvas.style.transform = "rotate(0deg)";
   localWheelDecorations.forEach((element) => { element.hidden = true; });
-  wheelAnimation.hidden = false;
-  wheelAnimation.onload = () => {
-    wheelAnimation.onload = null;
-    wheelAnimation.onerror = null;
-  };
-  wheelAnimation.onerror = () => {
-    if (state?.spin?.id === spin.id) spinWheel(spin);
-  };
   const extension = spin.animationExtension === "webp" ? "webp" : "gif";
-  wheelAnimation.src = `/wheel-animation/${encodeURIComponent(spin.animationVersion)}.${extension}`;
+  gifCanvasPlayer.play(`/wheel-animation/${encodeURIComponent(spin.animationVersion)}.${extension}`).catch(() => {
+    if (state?.spin?.id === spin.id) spinWheel(spin);
+  });
 }
 
 function showDonation(donation) {

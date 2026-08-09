@@ -17,11 +17,18 @@ test("요소별 OBS 쿼리 주소에서 오버레이와 화면 모듈을 제공�
   assert.equal(overlayResponse.status, 200);
   const overlayHtml = await overlayResponse.text();
   assert.match(overlayHtml, /view-mode\.js/);
+  assert.match(overlayHtml, /vendor\/gif-canvas-player\.js/);
+  assert.doesNotMatch(overlayHtml, /id="wheel-animation"/);
 
   const moduleResponse = await fetch(`http://127.0.0.1:${port}/overlay/view-mode.js`);
   assert.equal(moduleResponse.status, 200);
   assert.match(moduleResponse.headers.get("content-type"), /text\/javascript/);
   assert.match(await moduleResponse.text(), /resolveOverlayView/);
+  assert.match(moduleResponse.headers.get("cache-control"), /no-store/);
+
+  const playerResponse = await fetch(`http://127.0.0.1:${port}/overlay/vendor/gif-canvas-player.js`);
+  assert.equal(playerResponse.status, 200);
+  assert.match(playerResponse.headers.get("content-type"), /text\/javascript/);
 });
 
 test("Wheel of Names GIF를 전용 경로에서 제공한다", async (t) => {

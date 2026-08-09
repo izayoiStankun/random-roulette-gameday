@@ -1,6 +1,6 @@
 {
   "name": "roulette-broadcast",
-  "version": "0.3.0-beta.6",
+  "version": "0.3.0-beta.7",
   "description": "치지직 후원과 OBS를 연동하는 랜덤 룰렛 게임데이 데스크톱 앱",
   "main": "src/main/index.js",
   "author": "Remilegi community",
@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
+    "build:overlay-vendor": "esbuild src/overlay/gif-canvas-player-source.js --bundle --format=iife --global-name=GifCanvas --minify --outfile=src/overlay/vendor/gif-canvas-player.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --win portable nsis --publish never"
   },
@@ -19,7 +20,9 @@
   },
   "devDependencies": {
     "electron": "39.8.10",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.28.2",
+    "gifuct-js": "^2.1.2"
   },
   "overrides": {
     "engine.io-client": "3.5.6",

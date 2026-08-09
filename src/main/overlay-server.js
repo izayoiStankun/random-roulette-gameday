@@ -103,7 +103,8 @@ class OverlayServer extends EventEmitter {
     const extension = path.extname(filePath).toLowerCase();
     response.writeHead(200, {
       "Content-Type": CONTENT_TYPES[extension] || "application/octet-stream",
-      "Cache-Control": "no-cache"
+      "Cache-Control": "no-store, max-age=0",
+      "Pragma": "no-cache"
     });
     fs.createReadStream(filePath).pipe(response);
   }

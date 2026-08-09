@@ -65,7 +65,8 @@ function scheduleSave() {
 
 function scheduleSpinFinalize(spin) {
   clearTimeout(spinTimer);
-  spinTimer = setTimeout(() => engine.finalizeSpin(spin.id), 6500);
+  const delay = spin.provider === "wheelofnames" ? 8500 : 6500;
+  spinTimer = setTimeout(() => engine.finalizeSpin(spin.id), delay);
 }
 
 function sendWheelStatus(phase, message) {
